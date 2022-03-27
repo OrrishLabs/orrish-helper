@@ -32,6 +32,12 @@
   margin: 10px;;
 }
 
+.data {
+  color: blue;
+  font-weight: bold;
+  text-decoration: underline dotted gray;
+}
+
 .center-align{
   text-align: center;
   display: flex;
