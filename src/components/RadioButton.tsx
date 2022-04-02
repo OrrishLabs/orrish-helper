@@ -1,4 +1,4 @@
-import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@material-ui/core";
+import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 
 function RadioButton(props: any) {
     let isDataAvailable = () => {

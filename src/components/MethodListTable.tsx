@@ -1,10 +1,11 @@
-import { IconButton, Snackbar, Table, TableBody, TableCell, TableRow } from "@material-ui/core";
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { Delete } from "@material-ui/icons";
-import { useState } from "react";
+import { ReactElement, useState } from "react";
 import { Step } from "../model/step.model";
-import { Button, Tooltip } from "@mui/material";
+import { Button, IconButton, Snackbar, TableCell, TableRow, Tooltip } from "@mui/material";
+import { Delete } from "@mui/icons-material";
+import ConditionalWrapper from "../components/ConditionalWrapper";
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 
 function MethodListTable(props: any) {
 
@@ -34,12 +35,12 @@ function MethodListTable(props: any) {
 
     const onCopySteps = () => {
         var textArea = document.createElement("textarea");
-        textArea.value = "|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
+        textArea.value = "!|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
         document.execCommand('copy');
-        setSnackBarMessage('Copied step to clipboard.');
+        setSnackBarMessage('Copied steps to clipboard. You can paste it in FitNesse page and execute.');
         document.body.removeChild(textArea);
         setSelectedSteps(selectedStepsToCopy);
     };
@@ -73,7 +74,7 @@ function MethodListTable(props: any) {
         const values = currentStep.split("|");
         for (let count = 1; count < values.length; count++) {
             if (values[count].trim().length > 0) {
-                if (count === 1 && values[count].startsWith("$")) {
+                if (count === 1 && values[count].startsWith("$") && values[count].trim().endsWith("=")) {
                     rowValue = (rowValue)
                         ? [rowValue, (<span contentEditable suppressContentEditableWarning id={eachStep.id! as unknown as string + "-" + count as string} onInput={e => updateStepTextChange(e)} className="data">{values[1]}</span>)]
                         : rowValue = (<span contentEditable suppressContentEditableWarning id={eachStep.id! as unknown as string + "-" + count as string} onInput={e => updateStepTextChange(e)} className="data">{values[1]}</span>);
@@ -87,14 +88,34 @@ function MethodListTable(props: any) {
                 }
             }
         }
-        return rowValue;
+        return <span>{rowValue}</span>;
     };
+
+    const onDragEnd = (result) => {
+        const { destination, source } = result;
+        if (!destination)
+            return;
+        if (destination.droppableId === source.draggableId && destination.index === source.index)
+            return;
+
+        let sourceText = selectedStepsToCopy[source.index]
+        let updatedDestIndex = destination.index === 0 ? 0 : destination.index - 1;
+
+        selectedStepsToCopy.splice(source.index, 1);
+        selectedStepsToCopy.splice(updatedDestIndex, 0, sourceText)
+
+        let count = 1;
+
+        selectedStepsToCopy = selectedStepsToCopy.map(e => { return { ...e, id: count++ } });
+        setSelectedSteps(selectedStepsToCopy);
+
+    }
 
     return (
         <div>
             <Snackbar
                 open={snackBarMessage.length > 0}
-                autoHideDuration={1000}
+                autoHideDuration={6000}
                 onClose={handleClose}
                 message={snackBarMessage}
             />
@@ -115,26 +136,46 @@ function MethodListTable(props: any) {
                     }}
                 />}
             />
-            <Table>
-                <TableBody>
-                    {selectedSteps && selectedSteps.filter(e => e).map((e) => (
-                        <TableRow key={e.id}>
-                            <TableCell>
-                                <Tooltip title={"Delete this step."}>
-                                    <IconButton size="small" onClick={() => onDeleteStep(e)}>
-                                        <Delete />
-                                    </IconButton>
-                                </Tooltip>
-                            </TableCell>
-                            <Tooltip arrow={true} title={<h2 style={{ color: "lightblue" }}>{e.help && e.help.length === 0 ? 'Step self explanatory.' : e.help}</h2>}>
-                                <TableCell>
-                                    {getSuggestedCellsAsPlainText(e)}
-                                </TableCell>
-                            </Tooltip>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+            <DragDropContext onDragEnd={onDragEnd}>
+                {selectedSteps && selectedSteps.filter(e => e).map((e, index) => (
+                    <Droppable droppableId={e.id.toString()}>
+                        {(provided) => (
+                            <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                            >
+                                <Draggable draggableId={e.id.toString()} index={index}>
+                                    {(provided) => (
+                                        <TableRow
+                                            key={e.id}
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                        >
+                                            <TableCell>
+                                                <IconButton size="small" onClick={() => onDeleteStep(e)}>
+                                                    <Delete />
+                                                </IconButton>
+                                            </TableCell>
+                                            <TableCell>
+                                                <ConditionalWrapper
+                                                    condition={e.help && e.help.length > 0}
+                                                    wrapper={(children: ReactElement<any, any>) =>
+                                                        <Tooltip arrow={true} followCursor={true} title={e.help}>
+                                                            {children}
+                                                        </Tooltip>}
+                                                >
+                                                    {getSuggestedCellsAsPlainText(e)}
+                                                </ConditionalWrapper>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Draggable>
+                                {provided.placeholder}
+                            </div>)}
+                    </Droppable>))}
+            </DragDropContext>
+
             <br />
             <Button variant='contained' color="primary" onClick={onCopySteps}>Copy Steps</Button>
         </div>

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import RadioButton from './components/RadioButton';
 import MethodListTable from './components/MethodListTable';
 import './App.css';
-import { Button, Snackbar } from '@material-ui/core';
 import FormDialog from './components/FormDialog';
+import { Button, Snackbar } from '@mui/material';
+import { Step } from './model/step.model';
 
 function App() {
 
@@ -55,10 +56,14 @@ function App() {
     setShowDialog(false);
   };
 
-  let getAllTexts = () => {
+  let getAllTexts = (steps: Step[]) => {
     setTimeout(() => {
+      let count = 0;
+      for (const obj of steps) {
+        obj.id = ++count;
+      }
       var textArea = document.createElement("textarea");
-      textArea.value = stepsAsString;
+      textArea.value = (steps.length === 0) ? stepsAsString : JSON.stringify(steps);
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
@@ -68,13 +73,13 @@ function App() {
       navigator.clipboard
         .writeText(textArea.value)
         .then(() => {
-          setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to append any steps to it.');
+      setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
         })
         .catch(e => {
           setSnackBarMessage(e)
         });
         */
-      setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to append any steps to it.');
+      setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
       document.body.removeChild(textArea);
     }, 100);
   };
@@ -89,7 +94,7 @@ function App() {
       />
       {showDialog && stepsAsString.length > 0 && <FormDialog open={true} dialogClosed={dialogClosed} getAllTexts={getAllTexts} stepsAsString={stepsAsString} />}
       {steps.length > 0
-        ? (<Button variant='contained' color="primary" onClick={updateDialog}>View {radioSelected.split('-')[0]} Steps</Button>)
+        ? <Button variant='contained' color="primary" onClick={updateDialog}>View {radioSelected.split('-')[0]} Steps</Button>
         : <Button variant='contained' color="primary" onClick={fetchAreasHandler}>Populate All Steps</Button>}
       <RadioButton values={radioValues} valueSelected={changedRadioSelection} />
       <MethodListTable stepList={steps}></MethodListTable>
