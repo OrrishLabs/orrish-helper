@@ -5,7 +5,7 @@ Generated html file is used to show available steps and is served by FitNesse it
 
 ## Building locally
 1. Run ```npm install``` 
-2. In ```App.tsx```, uncomment to use the hardcoded React states.
+2. In ```App.tsx```, uncomment to use the hardcoded React states. Alternatively, you can also copy the <area>.json files from orrish-core and place under public/files folder.
 3. Run```npm start```
 ## Using in orrish-core
 1. Run ```npm run build```

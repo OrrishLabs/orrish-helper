@@ -1,10 +1,7 @@
-import { useState } from 'react';
-import RadioButton from './components/RadioButton';
+import { useEffect, useState } from 'react';
+import StepAreaRadioButton from './components/StepAreaRadioButton';
 import MethodListTable from './components/MethodListTable';
 import './App.css';
-import FormDialog from './components/FormDialog';
-import { Button, Snackbar } from '@mui/material';
-import { Step } from './model/step.model';
 
 function App() {
 
@@ -16,23 +13,19 @@ function App() {
   const [radioValues, setRadioValues] = useState([]);
   const [steps, setSteps] = useState([]);
   //*/
-  const [stepsAsString, setStepsAsString] = useState('');
-  const [snackBarMessage, setSnackBarMessage] = useState('');
-  const [showDialog, setShowDialog] = useState(false);
   const [radioSelected, setRadioSelected] = useState('');
 
-  const handleClose = () => {
-    setSnackBarMessage('');
-  };
-
   let currentOrigin = window.location.origin;
-  const fetchAreasHandler = () => {
-    fetch(currentOrigin + '/files/all-steps.json')
-      .then(response => { return response.json(); })
-      .then(data => {
-        setRadioValues(data.steps);
-      })
-  };
+
+  useEffect(() => {
+    if (radioValues.length === 0) {
+      fetch(currentOrigin + '/files/all-steps.json')
+        .then(response => { return response.json(); })
+        .then(data => {
+          setRadioValues(data.steps);
+        });
+    }
+  }, [currentOrigin, radioValues.length]);
 
   const changedRadioSelection = (value: string) => {
     setRadioSelected(value);
@@ -41,63 +34,17 @@ function App() {
         return response.json();
       })
       .then(data => {
-        setStepsAsString(JSON.stringify(data));
         setSteps(data);
-      }).catch(e =>
-        setStepsAsString('')
-      );
+      }).catch(e => {
+        setSteps([]);
+      });
   };
 
-  const updateDialog = () => {
-    setShowDialog(true);
-  };
-
-  const dialogClosed = () => {
-    setShowDialog(false);
-  };
-
-  let getAllTexts = (steps: Step[]) => {
-    setTimeout(() => {
-      let count = 0;
-      for (const obj of steps) {
-        obj.id = ++count;
-      }
-      var textArea = document.createElement("textarea");
-      textArea.value = (steps.length === 0) ? stepsAsString : JSON.stringify(steps);
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      document.execCommand('copy');
-      /*
-      //This does not work on unsecured sites.
-      navigator.clipboard
-        .writeText(textArea.value)
-        .then(() => {
-      setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
-        })
-        .catch(e => {
-          setSnackBarMessage(e)
-        });
-        */
-      setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
-      document.body.removeChild(textArea);
-    }, 100);
-  };
 
   return (
     <div className='margin center-align'>
-      <Snackbar
-        open={snackBarMessage.length > 0}
-        autoHideDuration={6000}
-        onClose={handleClose}
-        message={snackBarMessage}
-      />
-      {showDialog && stepsAsString.length > 0 && <FormDialog open={true} dialogClosed={dialogClosed} getAllTexts={getAllTexts} stepsAsString={stepsAsString} />}
-      {steps.length > 0
-        ? <Button variant='contained' color="primary" onClick={updateDialog}>View {radioSelected.split('-')[0]} Steps</Button>
-        : <Button variant='contained' color="primary" onClick={fetchAreasHandler}>Populate All Steps</Button>}
-      <RadioButton values={radioValues} valueSelected={changedRadioSelection} />
-      <MethodListTable stepList={steps}></MethodListTable>
+      <StepAreaRadioButton values={radioValues} valueSelected={changedRadioSelection} />
+      <MethodListTable stepList={steps} radioSelected={radioSelected}></MethodListTable>
     </div>
   );
 }

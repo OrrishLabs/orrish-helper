@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
@@ -11,25 +11,34 @@ const EditableTable = (props: any) => {
 
     const gridRef = useRef();
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
-    const gridStyle = useMemo(() => ({ height: 500, width: 1000 }), []);
-    const [rowData] = useState(JSON.parse(props.stepsAsString));
+    const gridStyle = useMemo(() => ({ height: 1000, width: 1000 }), []);
+    const [rowData, setRowData] = useState<Step[]>([]);
+    let updateSuggestions = props.updateSuggestions;
+
+    useEffect(() => {
+        setRowData(props.suggestions)
+    }, [props.suggestions]);
 
     const onRowDragCallback = (params: RowDragCallbackParams): boolean => {
         return (params.colDef.field.includes('step'));
-    }
+    };
 
     const onRowDragEnd = (event: RowDragEndEvent) => {
-        let data = event.node.parent.allLeafChildren.map(e => { return { ...e.data, 'id': e.childIndex + 1 } });
-        event.api.setRowData(data);
-        props.updateSuggestions(data);
-    }
-
-    let updateSuggestions = props.updateSuggestions
+        let items = event.node.parent.allLeafChildren.map(e => { return { ...e.data, 'id': e.childIndex + 1 } });
+        event.api.setRowData(items);
+        updateSuggestions(items);
+    };
 
     const onCellValueChanged = useCallback((event: CellValueChangedEvent) => {
-        let items = event.node.parent.allLeafChildren.map(e => { return { ...e.data } });
-        updateSuggestions(items);
-    }, [updateSuggestions]);
+        let stepValue: string = event.node.data.step.trim();
+        if (stepValue.startsWith("|") && stepValue.endsWith("|")) {
+            let items = event.node.parent.allLeafChildren.map(e => { return { ...e.data } });
+            event.api.setRowData(items);
+            updateSuggestions(items);
+        } else {
+            props.setSnackBarMessage('Step should start and end with |');
+        }
+    }, [updateSuggestions, props]);
 
     const onDelete = (event: CellEvent) => {
         let items: Step[] = event.node.parent.allLeafChildren.map(e => { return { ...e.data } });
@@ -37,8 +46,8 @@ const EditableTable = (props: any) => {
         let count = 1;
         items = items.map(e => { return { ...e, 'id': count++ } });
         event.api.setRowData(items);
-        props.updateSuggestions(items);
-    }
+        updateSuggestions(items);
+    };
 
     const onAddRow = (event: CellEvent) => {
         let items: Step[] = event.node.parent.allLeafChildren.map(e => { return { ...e.data } });
@@ -46,21 +55,21 @@ const EditableTable = (props: any) => {
         let count = 1;
         items = items.map(e => { return { ...e, 'id': count++ } });
         event.api.setRowData(items);
-        props.updateSuggestions(items);
-    }
+        updateSuggestions(items);
+    };
 
     const [columnDefs] = useState([
         { field: 'step' },
         { field: 'help' },
         {
-            field: '', flex: 0.15, cellStyle: { padding: '0' }, editable: false, cellRenderer: function (e: CellEvent) {
+            field: '', flex: 0.15, editable: false, cellStyle: { padding: '0' }, cellRenderer: function (e: CellEvent) {
                 return <IconButton size="small" color='warning' onClick={() => onDelete(e)}>
                     <Delete />
                 </IconButton>
             }
         },
         {
-            field: '', flex: 0.15, cellStyle: { padding: '0' }, editable: false, cellRenderer: function (e: CellEvent) {
+            field: '', flex: 0.15, editable: false, cellStyle: { padding: '0' }, cellRenderer: function (e: CellEvent) {
                 return <IconButton size="small" color='success' onClick={() => onAddRow(e)}>
                     <Add />
                 </IconButton>

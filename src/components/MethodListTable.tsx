@@ -1,48 +1,132 @@
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Step } from "../model/step.model";
-import { Button, IconButton, Snackbar, TableCell, TableRow, Tooltip } from "@mui/material";
-import { Delete } from "@mui/icons-material";
+import { Button, IconButton, Snackbar, TableCell, Tooltip } from "@mui/material";
+import { Add, CopyAll, Delete, Edit } from "@mui/icons-material";
 import ConditionalWrapper from "../components/ConditionalWrapper";
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
+import { Transition } from 'react-transition-group';
+import SuggestionEditDialog from './SuggestionEditDialog';
+import { sampleStepsService } from '../services/get-sample-steps';
+import SplitButton from './SplitButton';
 
 function MethodListTable(props: any) {
 
-    const suggestions: Step[] = props.stepList;
-    const [snackBarMessage, setSnackBarMessage] = useState('');
+    const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
+    const [snackBarMessage, setSnackBarMessage] = useState('');
+    const [inProp, setInProp] = useState(false);
+    const [isDialogShown, setIsDialogShown] = useState(false);
+
+    useEffect(() => {
+        setSuggestions(props.stepList);
+    }, [props.stepList]);
+
     let selectedStepsToCopy: Step[] = [];
 
+    const closeDialog = (snackBarMessage: string, suggestionsToCopy: Step[]) => {
+        setIsDialogShown(false);
+        setTimeout(() => {
+            if (snackBarMessage && snackBarMessage.length > 0) {
+                setSnackBarMessage(snackBarMessage);
+                let count = 0;
+                for (const obj of suggestionsToCopy) {
+                    obj.id = ++count;
+                }
+                var textArea = document.createElement("textarea");
+                textArea.value = JSON.stringify(suggestionsToCopy);
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                /*
+                //This does not work on unsecured sites.
+                navigator.clipboard
+                  .writeText(textArea.value)
+                  .then(() => {
+                setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
+                  })
+                  .catch(e => {
+                    setSnackBarMessage(e)
+                  });
+                  */
+                document.body.removeChild(textArea);
+            }
+        }, 100)
+    };
+
+    const showDialog = () => {
+        setIsDialogShown(true);
+    };
+
+    const duration = 1000;
+
+    const defaultStyle = {
+        transition: `opacity ${duration}ms ease-in-out`,
+        opacity: 0,
+        'color': 'green',
+    }
+
+    const transitionStyles = {
+        entering: { opacity: 1 },
+        entered: { opacity: 1 },
+        exiting: { opacity: 0 },
+        exited: { opacity: 0 },
+    };
+
     const appendSelectedSteps = (newValue: string) => {
-        let valueSteps = JSON.parse(JSON.stringify(suggestions.filter(e => e.step.includes(newValue))));
+        let valueSteps = suggestions.filter(e => e.step.includes(newValue.trim()));
         if (valueSteps && valueSteps.length > 0) {
             valueSteps[0].id = Math.random();
             setSelectedSteps((prevState) => [...prevState, valueSteps[0]]);
             selectedStepsToCopy.push(valueSteps[0]);
         }
+        setInProp(selectedStepsToCopy.length === 0 ? false : true);
     };
+
+    const addSampleSteps = async () => {
+        let stepsToBeAdded: Step[] = await sampleStepsService.getSampleSteps(props.radioSelected.split('-')[0]);
+        stepsToBeAdded.forEach(e => appendSelectedSteps(e.step));
+    }
+
+    const getSampleStepFor = async (text: string) => {
+        let stepsToBeAdded: Step[] = await sampleStepsService.getSampleSteps(props.radioSelected.split('-')[0] + text);
+        stepsToBeAdded.forEach(e => appendSelectedSteps(e.step));
+    }
+
+    const apiSampleStepDropdownOptions = ['Append GET Steps', 'Append POST Steps', 'Append PUT Steps', 'Append DELETE Steps'];
+    const setupSampleStepDropdownOptions = ['Append Database Setup', 'Append Browser Setup', 'Append Mobile Setup', 'Append API Setup', 'Append general Setup'];
 
     const handleClose = () => {
         setSnackBarMessage('');
     };
 
+    const onDragEnd = (result) => {
+        const { destination, source } = result;
+        if (!destination)
+            return;
+        if (destination.droppableId === source.draggableId && destination.index === source.index)
+            return;
+
+        let sourceText = selectedStepsToCopy[source.index]
+        let updatedDestIndex = destination.index === 0 ? 0 : destination.index - 1;
+
+        selectedStepsToCopy.splice(source.index, 1);
+        selectedStepsToCopy.splice(updatedDestIndex, 0, sourceText)
+
+        let count = 1;
+
+        selectedStepsToCopy = selectedStepsToCopy.map(e => { return { ...e, id: count++ } });
+        setSelectedSteps(selectedStepsToCopy);
+
+    }
+
     let onDeleteStep = (step: Step) => {
         setSelectedSteps(selectedSteps.filter(e => !(e.id === step.id)));
         const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
         selectedStepsToCopy.splice(index, 1);
-    };
-
-    const onCopySteps = () => {
-        var textArea = document.createElement("textarea");
-        textArea.value = "!|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        setSnackBarMessage('Copied steps to clipboard. You can paste it in FitNesse page and execute.');
-        document.body.removeChild(textArea);
-        setSelectedSteps(selectedStepsToCopy);
+        setInProp(selectedStepsToCopy.length === 0 ? false : true);
     };
 
     const updateStepTextChange = (valuePassed: any) => {
@@ -62,6 +146,23 @@ function MethodListTable(props: any) {
         item.step = updatedString;
         items[index] = item;
         selectedStepsToCopy = items;
+    };
+
+    const clearSteps = () => {
+        setSelectedSteps([]);
+        setInProp(false);
+    };
+
+    const onCopySteps = () => {
+        var textArea = document.createElement("textarea");
+        textArea.value = "!|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        setSnackBarMessage('Copied steps to clipboard. You can paste it in FitNesse page and execute.');
+        document.body.removeChild(textArea);
+        setSelectedSteps(selectedStepsToCopy);
     };
 
     const getSuggestedCellsAsPlainText = (eachStep: Step) => {
@@ -91,26 +192,6 @@ function MethodListTable(props: any) {
         return <span>{rowValue}</span>;
     };
 
-    const onDragEnd = (result) => {
-        const { destination, source } = result;
-        if (!destination)
-            return;
-        if (destination.droppableId === source.draggableId && destination.index === source.index)
-            return;
-
-        let sourceText = selectedStepsToCopy[source.index]
-        let updatedDestIndex = destination.index === 0 ? 0 : destination.index - 1;
-
-        selectedStepsToCopy.splice(source.index, 1);
-        selectedStepsToCopy.splice(updatedDestIndex, 0, sourceText)
-
-        let count = 1;
-
-        selectedStepsToCopy = selectedStepsToCopy.map(e => { return { ...e, id: count++ } });
-        setSelectedSteps(selectedStepsToCopy);
-
-    }
-
     return (
         <div>
             <Snackbar
@@ -119,23 +200,16 @@ function MethodListTable(props: any) {
                 onClose={handleClose}
                 message={snackBarMessage}
             />
-            <br />
-            <Autocomplete
-                onChange={(event, newValue) => {
-                    if (newValue && newValue.length > 0) {
-                        appendSelectedSteps(newValue);
-                    }
-                }}
-                id="controllable-states-demo"
-                options={suggestions.map(e => e.step)}
-                sx={{ width: 1000 }}
-                renderInput={(params) => <TextField
-                    {...params} label="Type for suggestion..."
-                    InputProps={{
-                        ...params.InputProps
-                    }}
-                />}
-            />
+            <Transition in={inProp} timeout={duration}>
+                {state => (
+                    <div style={{
+                        ...defaultStyle,
+                        ...transitionStyles[state]
+                    }}>
+                        Modify data as needed. Drag to re-order steps.
+                    </div>
+                )}
+            </Transition>
             <DragDropContext onDragEnd={onDragEnd}>
                 {selectedSteps && selectedSteps.filter(e => e).map((e, index) => (
                     <Droppable droppableId={e.id.toString()}>
@@ -146,7 +220,7 @@ function MethodListTable(props: any) {
                             >
                                 <Draggable draggableId={e.id.toString()} index={index}>
                                     {(provided) => (
-                                        <TableRow
+                                        <div
                                             key={e.id}
                                             ref={provided.innerRef}
                                             {...provided.draggableProps}
@@ -168,17 +242,50 @@ function MethodListTable(props: any) {
                                                     {getSuggestedCellsAsPlainText(e)}
                                                 </ConditionalWrapper>
                                             </TableCell>
-                                        </TableRow>
+                                        </div>
                                     )}
                                 </Draggable>
                                 {provided.placeholder}
                             </div>)}
                     </Droppable>))}
             </DragDropContext>
-
+            <Autocomplete
+                onChange={(event, newValue: string) => {
+                    if (newValue && newValue.length > 0) {
+                        appendSelectedSteps(newValue);
+                    }
+                }}
+                id="controllable-states-demo"
+                options={suggestions.map(e => e.step)}
+                sx={{ width: 1000 }}
+                renderInput={(params) => <TextField
+                    {...params} label="Type for suggestion..."
+                    InputProps={{
+                        ...params.InputProps
+                    }}
+                    size="small"
+                />}
+            />
             <br />
-            <Button variant='contained' color="primary" onClick={onCopySteps}>Copy Steps</Button>
-        </div>
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: "10px" }}>
+                {isDialogShown && <SuggestionEditDialog setSnackBarMessage={setSnackBarMessage} closeDialog={closeDialog} suggestions={suggestions} />}
+
+                {suggestions.length > 0 &&
+                    props.radioSelected.includes("api")
+                    //? <Button style={{ textTransform: 'none' }} variant='contained' color="primary" onClick={showDialog}>Add Sample API Steps</Button>
+                    ? <SplitButton options={apiSampleStepDropdownOptions} getSampleStepFor={getSampleStepFor}></SplitButton>
+                    : props.radioSelected.includes("setup")
+                        ? <SplitButton options={setupSampleStepDropdownOptions} getSampleStepFor={getSampleStepFor}></SplitButton>
+                        : props.radioSelected.includes("browser") || props.radioSelected.includes("mobile")
+                            //? <Button style={{ textTransform: 'none' }} variant='contained' color="primary" onClick={addSampleSteps}>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</Button>
+                            ? <Tooltip title={"Add Sample " + props.radioSelected.split('-')[0].toUpperCase() + " Steps"}><Button color="primary" variant="contained" endIcon={<Add />} onClick={addSampleSteps}>Add</Button></Tooltip>
+                            : false}
+
+                {suggestions.length > 0 && <Tooltip title={"Edit " + props.radioSelected.split('-')[0].toUpperCase() + " Suggestions"}><Button color="primary" variant="contained" endIcon={<Edit />} onClick={showDialog}>Edit</Button></Tooltip>}
+                {selectedSteps.length > 0 && <Tooltip title="Copy Steps Above"><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopySteps}>Copy</Button></Tooltip>}
+                {selectedSteps.length > 0 && <Tooltip title="Delete All Steps Above"><Button color="primary" variant="contained" endIcon={<Delete />} onClick={clearSteps}>Delete</Button></Tooltip>}
+            </div>
+        </div >
     );
 };
 

@@ -1,14 +1,10 @@
 import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 
-function RadioButton(props: any) {
-    let isDataAvailable = () => {
-        return props.values.length === 0
-            ? 'Click above button to fetch step details.'
-            : 'Select a radio below to see more details';
-    }
-    return (<div className="margin">
-        <FormControl className="center-align">
-            <FormLabel>{isDataAvailable()}</FormLabel>
+function StepAreaRadioButton(props: any) {
+
+    return (
+        <FormControl className="center-align margin">
+            <FormLabel>Select a radio to populate steps.</FormLabel>
             <RadioGroup
                 aria-labelledby="demo-radio-buttons-group-label"
                 name="radio-buttons-group"
@@ -19,7 +15,6 @@ function RadioButton(props: any) {
                     <FormControlLabel key={e} value={e} control={<Radio />} label={e.split(".json")[0].split("-")[0]} />
                 )}
             </RadioGroup>
-        </FormControl>
-    </div>);
+        </FormControl>);
 }
-export default RadioButton;
+export default StepAreaRadioButton;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { List, arrayMove } from 'react-movable';
 import { Step } from '../model/step.model';
 
-function MovableTable(props: any) {
+function DraggableTable(props: any) {
 
     const tableStyles = {
         background: '#eaebec',
@@ -97,4 +97,4 @@ function MovableTable(props: any) {
     );
 };
 
-export default MovableTable;
+export default DraggableTable;
