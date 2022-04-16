@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useRef, useState } from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -8,15 +8,17 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
+import { Tooltip } from '@mui/material';
+import PropTypes from 'prop-types';
 
 
 export default function SplitButton(props: any) {
 
     const options = props.options;
 
-    const [open, setOpen] = React.useState(false);
-    const anchorRef = React.useRef<HTMLDivElement>(null);
-    const [selectedIndex, setSelectedIndex] = React.useState(1);
+    const [open, setOpen] = useState(false);
+    const anchorRef = useRef<HTMLDivElement>(null);
+    const [selectedIndex, setSelectedIndex] = useState(0);
 
     const handleClick = () => {
         console.info(`You clicked ${options[selectedIndex]}`);
@@ -26,7 +28,7 @@ export default function SplitButton(props: any) {
         event: React.MouseEvent<HTMLLIElement, MouseEvent>,
         index: number,
     ) => {
-        props.getSampleStepFor(options[index]);
+        props.handleMenuItemClick(options[index]);
         setSelectedIndex(index);
         setOpen(false);
     };
@@ -42,14 +44,13 @@ export default function SplitButton(props: any) {
         ) {
             return;
         }
-
         setOpen(false);
     };
 
     return (
         <React.Fragment>
-            <ButtonGroup size='small' variant="contained" ref={anchorRef} aria-label="split button">
-                <Button style={{ textTransform: 'none' }} onClick={handleClick}>{options[selectedIndex]}</Button>
+            <ButtonGroup size='small' variant="contained" ref={anchorRef} aria-label="split button" >
+                <Tooltip title={<span className='tooltip'>{props.tooltipText}</span>}><Button onClick={handleClick}>{props.buttonText}</Button></Tooltip>
                 <Button
                     style={{ textTransform: 'none' }}
                     size="small"
@@ -96,4 +97,11 @@ export default function SplitButton(props: any) {
             </Popper>
         </React.Fragment>
     );
+}
+
+SplitButton.propTypes = {
+    tooltipText: PropTypes.string.isRequired,
+    buttonText: PropTypes.string.isRequired,
+    options: PropTypes.arrayOf(PropTypes.string).isRequired,
+    handleMenuItemClick: PropTypes.func.isRequired,
 }

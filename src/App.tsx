@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import StepAreaRadioButton from './components/StepAreaRadioButton';
 import MethodListTable from './components/MethodListTable';
+import GuidedTour from './components/GuidedTour';
 import './App.css';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
 
   return (
     <div className='margin center-align'>
+      <GuidedTour />
       <StepAreaRadioButton values={radioValues} valueSelected={changedRadioSelection} />
       <MethodListTable stepList={steps} radioSelected={radioSelected}></MethodListTable>
     </div>

@@ -1,23 +1,26 @@
+import { ReactElement, useEffect, useState } from "react";
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { ReactElement, useEffect, useState } from "react";
-import { Step } from "../model/step.model";
-import { Button, IconButton, Snackbar, TableCell, Tooltip } from "@mui/material";
-import { Add, CopyAll, Delete, Edit } from "@mui/icons-material";
-import ConditionalWrapper from "../components/ConditionalWrapper";
+import { Button, IconButton, Snackbar, Stack, TableCell, Tooltip } from "@mui/material";
+import { CopyAll, Delete, Edit, PlaylistAdd } from "@mui/icons-material";
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import { Transition } from 'react-transition-group';
+import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
+import PropTypes from 'prop-types';
 import SuggestionEditDialog from './SuggestionEditDialog';
-import { sampleStepsService } from '../services/get-sample-steps';
 import SplitButton from './SplitButton';
+import ConditionalWrapper from "../components/ConditionalWrapper";
+import { sampleStepsService } from '../services/get-sample-steps';
+import { Step } from "../model/step.model";
 
 function MethodListTable(props: any) {
 
     const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
     const [snackBarMessage, setSnackBarMessage] = useState('');
-    const [inProp, setInProp] = useState(false);
+    const [inTextProp, setInTextProp] = useState(false);
     const [isDialogShown, setIsDialogShown] = useState(false);
+    //Below is to reset the auto complete text value by re-rendering component.
+    const [randomValue, setRandomValue] = useState(Math.random());
 
     useEffect(() => {
         setSuggestions(props.stepList);
@@ -60,7 +63,7 @@ function MethodListTable(props: any) {
         setIsDialogShown(true);
     };
 
-    const duration = 1000;
+    const duration = 500;
 
     const defaultStyle = {
         transition: `opacity ${duration}ms ease-in-out`,
@@ -78,11 +81,10 @@ function MethodListTable(props: any) {
     const appendSelectedSteps = (newValue: string) => {
         let valueSteps = suggestions.filter(e => e.step.includes(newValue.trim()));
         if (valueSteps && valueSteps.length > 0) {
-            valueSteps[0].id = Math.random();
-            setSelectedSteps((prevState) => [...prevState, valueSteps[0]]);
+            setSelectedSteps((prevState) => [...prevState, { ...valueSteps[0], id: Math.random() }]);
             selectedStepsToCopy.push(valueSteps[0]);
         }
-        setInProp(selectedStepsToCopy.length === 0 ? false : true);
+        setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
     };
 
     const addSampleSteps = async () => {
@@ -95,8 +97,8 @@ function MethodListTable(props: any) {
         stepsToBeAdded.forEach(e => appendSelectedSteps(e.step));
     }
 
-    const apiSampleStepDropdownOptions = ['Append GET Steps', 'Append POST Steps', 'Append PUT Steps', 'Append DELETE Steps'];
-    const setupSampleStepDropdownOptions = ['Append Database Setup', 'Append Browser Setup', 'Append Mobile Setup', 'Append API Setup', 'Append general Setup'];
+    const apiSampleStepDropdownOptions = ['GET Steps', 'POST Steps', 'PUT Steps', 'DELETE Steps'];
+    const setupSampleStepDropdownOptions = ['Database Setup', 'Browser Setup', 'Mobile Setup', 'API Setup', 'General Setup'];
 
     const handleClose = () => {
         setSnackBarMessage('');
@@ -126,7 +128,7 @@ function MethodListTable(props: any) {
         setSelectedSteps(selectedSteps.filter(e => !(e.id === step.id)));
         const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
         selectedStepsToCopy.splice(index, 1);
-        setInProp(selectedStepsToCopy.length === 0 ? false : true);
+        setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
     };
 
     const updateStepTextChange = (valuePassed: any) => {
@@ -150,7 +152,7 @@ function MethodListTable(props: any) {
 
     const clearSteps = () => {
         setSelectedSteps([]);
-        setInProp(false);
+        setInTextProp(false);
     };
 
     const onCopySteps = () => {
@@ -200,7 +202,7 @@ function MethodListTable(props: any) {
                 onClose={handleClose}
                 message={snackBarMessage}
             />
-            <Transition in={inProp} timeout={duration}>
+            <Transition in={inTextProp} timeout={duration}>
                 {state => (
                     <div style={{
                         ...defaultStyle,
@@ -211,55 +213,67 @@ function MethodListTable(props: any) {
                 )}
             </Transition>
             <DragDropContext onDragEnd={onDragEnd}>
-                {selectedSteps && selectedSteps.filter(e => e).map((e, index) => (
-                    <Droppable droppableId={e.id.toString()}>
-                        {(provided) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                            >
-                                <Draggable draggableId={e.id.toString()} index={index}>
-                                    {(provided) => (
-                                        <div
-                                            key={e.id}
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                        >
-                                            <TableCell>
-                                                <IconButton size="small" onClick={() => onDeleteStep(e)}>
-                                                    <Delete />
-                                                </IconButton>
-                                            </TableCell>
-                                            <TableCell>
-                                                <ConditionalWrapper
-                                                    condition={e.help && e.help.length > 0}
-                                                    wrapper={(children: ReactElement<any, any>) =>
-                                                        <Tooltip arrow={true} followCursor={true} title={e.help}>
-                                                            {children}
-                                                        </Tooltip>}
+                <TransitionGroup component={null}>
+                    {selectedSteps && selectedSteps.filter(e => e).map((e, index) => (
+                        <CSSTransition
+                            timeout={duration}
+                            classNames="slide"
+                            mountOnEnter
+                            unmountOnExit
+                            key={e.id}
+                        >
+                            <Droppable droppableId={e.id.toString()}>
+                                {(provided) => (
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                    >
+                                        <Draggable draggableId={e.id.toString()} index={index}>
+                                            {(provided) => (
+                                                <div
+                                                    id="editable-row"
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    {...provided.dragHandleProps}
                                                 >
-                                                    {getSuggestedCellsAsPlainText(e)}
-                                                </ConditionalWrapper>
-                                            </TableCell>
-                                        </div>
-                                    )}
-                                </Draggable>
-                                {provided.placeholder}
-                            </div>)}
-                    </Droppable>))}
+                                                    <TableCell>
+                                                        <IconButton size="small" onClick={() => onDeleteStep(e)}>
+                                                            <Delete />
+                                                        </IconButton>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <ConditionalWrapper
+                                                            condition={e.help && e.help.length > 0}
+                                                            wrapper={(children: ReactElement<any, any>) =>
+                                                                <Tooltip arrow={true} followCursor={true} title={e.help}>
+                                                                    {children}
+                                                                </Tooltip>}
+                                                        >
+                                                            {getSuggestedCellsAsPlainText(e)}
+                                                        </ConditionalWrapper>
+                                                    </TableCell>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                        {provided.placeholder}
+                                    </div>)}
+                            </Droppable>
+                        </CSSTransition>))}
+                </TransitionGroup>
             </DragDropContext>
             <Autocomplete
-                onChange={(event, newValue: string) => {
-                    if (newValue && newValue.length > 0) {
-                        appendSelectedSteps(newValue);
+                key={randomValue}
+                onChange={(event, newStep: string) => {
+                    if (newStep && newStep.length > 0) {
+                        appendSelectedSteps(newStep);
+                        setRandomValue(Math.random());
                     }
                 }}
-                id="controllable-states-demo"
+                id="suggestion-box"
                 options={suggestions.map(e => e.step)}
                 sx={{ width: 1000 }}
                 renderInput={(params) => <TextField
-                    {...params} label="Type for suggestion..."
+                    {...params} label="Type for suggestions..."
                     InputProps={{
                         ...params.InputProps
                     }}
@@ -267,26 +281,33 @@ function MethodListTable(props: any) {
                 />}
             />
             <br />
-            <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: "10px" }}>
-                {isDialogShown && <SuggestionEditDialog setSnackBarMessage={setSnackBarMessage} closeDialog={closeDialog} suggestions={suggestions} />}
-
-                {suggestions.length > 0 &&
-                    props.radioSelected.includes("api")
-                    //? <Button style={{ textTransform: 'none' }} variant='contained' color="primary" onClick={showDialog}>Add Sample API Steps</Button>
-                    ? <SplitButton options={apiSampleStepDropdownOptions} getSampleStepFor={getSampleStepFor}></SplitButton>
-                    : props.radioSelected.includes("setup")
-                        ? <SplitButton options={setupSampleStepDropdownOptions} getSampleStepFor={getSampleStepFor}></SplitButton>
-                        : props.radioSelected.includes("browser") || props.radioSelected.includes("mobile")
-                            //? <Button style={{ textTransform: 'none' }} variant='contained' color="primary" onClick={addSampleSteps}>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</Button>
-                            ? <Tooltip title={"Add Sample " + props.radioSelected.split('-')[0].toUpperCase() + " Steps"}><Button color="primary" variant="contained" endIcon={<Add />} onClick={addSampleSteps}>Add</Button></Tooltip>
-                            : false}
-
-                {suggestions.length > 0 && <Tooltip title={"Edit " + props.radioSelected.split('-')[0].toUpperCase() + " Suggestions"}><Button color="primary" variant="contained" endIcon={<Edit />} onClick={showDialog}>Edit</Button></Tooltip>}
-                {selectedSteps.length > 0 && <Tooltip title="Copy Steps Above"><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopySteps}>Copy</Button></Tooltip>}
-                {selectedSteps.length > 0 && <Tooltip title="Delete All Steps Above"><Button color="primary" variant="contained" endIcon={<Delete />} onClick={clearSteps}>Delete</Button></Tooltip>}
+            <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-around", gap: "10px" }}>
+                {suggestions.length > 0 && <Tooltip title={<span className='tooltip'>Edit available suggestions for {props.radioSelected.split('-')[0].toUpperCase()}</span>}><Button color="primary" variant="contained" endIcon={<Edit />} onClick={showDialog}>Edit</Button></Tooltip>}
+                <div id='bottom-buttons' />
+                <div />
+                <div />
+                <Stack direction="row" spacing={1}>
+                    {isDialogShown && <SuggestionEditDialog setSnackBarMessage={setSnackBarMessage} closeDialog={closeDialog} suggestions={suggestions} />}
+                    {suggestions.length > 0 &&
+                        props.radioSelected.includes("api")
+                        ? <SplitButton buttonText='Add Sample' tooltipText='Add sample API steps from dropdown.' options={apiSampleStepDropdownOptions} handleMenuItemClick={getSampleStepFor}></SplitButton>
+                        : props.radioSelected.includes("setup")
+                            ? <SplitButton buttonText='Add Sample' tooltipText='SetUp steps need to go to SetUp FitNesse page. Do not combine SetUp and test steps. ' options={setupSampleStepDropdownOptions} handleMenuItemClick={getSampleStepFor}></SplitButton>
+                            : props.radioSelected.includes("browser") || props.radioSelected.includes("mobile")
+                                ? <Tooltip title={<span className='tooltip'>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</span>}><Button color="primary" variant="contained" endIcon={<PlaylistAdd />} onClick={addSampleSteps}>Add Sample</Button></Tooltip>
+                                : false}
+                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Delete all steps above.</span>}><Button color="primary" variant="contained" endIcon={<Delete />} onClick={clearSteps}>Delete</Button></Tooltip>}
+                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Copy steps above to be pasted in FitNesse test.</span>}><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopySteps}>Copy</Button></Tooltip>}
+                </Stack>
             </div>
         </div >
     );
 };
+
+
+MethodListTable.propTypes = {
+    radioSelected: PropTypes.string.isRequired,
+    stepList: PropTypes.array.isRequired,
+}
 
 export default MethodListTable;

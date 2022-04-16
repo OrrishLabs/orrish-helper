@@ -38,6 +38,25 @@
   text-decoration: underline dotted gray;
 }
 
+.slide-enter {
+  transform: translateX(-100%);
+  transition: 0.5s linear;
+  background-color: darkseagreen;
+}
+.slide-enter-active {
+  transform: translateX(0%);
+  background-color: transparent;
+}
+.slide-exit {
+  transform: translateX(0%);
+  transition: 0.5s linear;
+  background-color: transparent;
+}
+.slide-exit-active {
+  transform: translateX(-100%);
+  background-color: lightsalmon;
+}
+
 .center-align{
   text-align: center;
   display: flex;

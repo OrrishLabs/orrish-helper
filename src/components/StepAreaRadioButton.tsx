@@ -1,11 +1,11 @@
-import { FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
+import { FormControl, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 
 function StepAreaRadioButton(props: any) {
 
     return (
-        <FormControl className="center-align margin">
-            <FormLabel>Select a radio to populate steps.</FormLabel>
+        <FormControl className="center-align margin" >
             <RadioGroup
+                id="radio-group"
                 aria-labelledby="demo-radio-buttons-group-label"
                 name="radio-buttons-group"
                 row
