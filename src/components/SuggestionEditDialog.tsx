@@ -27,6 +27,7 @@ function SuggestionEditDialog(props: any) {
     };
 
     const copyAndClose = () => {
+        suggestionsToCopy = (suggestionsToCopy.length === 0) ? props.suggestions : suggestionsToCopy;
         props.closeDialog('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.', suggestionsToCopy);
     };
 

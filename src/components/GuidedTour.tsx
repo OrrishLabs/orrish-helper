@@ -8,13 +8,13 @@ const GuidedTour = () => {
     const [steps] = useState<Step[]>([
         {
             target: '#radio-group',
-            content: 'Select one of the radio buttons to populate steps.',
+            content: 'Select one of the radio buttons to populate suggestions.',
             disableBeacon: true,
             placement: "auto"
 
         }, {
             target: '#suggestion-box',
-            content: 'Type here for suggestions on the selected radio.',
+            content: 'Type here for suggestions on the selected radio or click from dropdown.',
         },
         {
             target: '#editable-row',

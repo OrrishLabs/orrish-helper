@@ -51,8 +51,7 @@ function DraggableTable(props: any) {
                 values={items}
                 onChange={({ oldIndex, newIndex }) => {
                     setItems(arrayMove(items, oldIndex, newIndex));
-                }
-                }
+                }}
                 renderList={({ children, props, isDragged }) => (
                     <table
                         style={{

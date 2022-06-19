@@ -1,22 +1,22 @@
-import { ReactElement, useEffect, useState } from "react";
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { Button, IconButton, Snackbar, Stack, TableCell, Tooltip } from "@mui/material";
-import { CopyAll, Delete, Edit, PlaylistAdd } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { Step } from "../model/step.model";
+import { Button, IconButton, Stack, TableCell, Tooltip } from "@mui/material";
+import { CopyAll, Delete, Edit, Help, PlaylistAdd } from "@mui/icons-material";
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
-import PropTypes from 'prop-types';
 import SuggestionEditDialog from './SuggestionEditDialog';
-import SplitButton from './SplitButton';
-import ConditionalWrapper from "../components/ConditionalWrapper";
 import { sampleStepsService } from '../services/get-sample-steps';
-import { Step } from "../model/step.model";
+import SplitButton from './SplitButton';
+import PropTypes from 'prop-types';
+import CustomSnackBar from './CustomSnackBar';
 
 function MethodListTable(props: any) {
 
     const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
-    const [snackBarMessage, setSnackBarMessage] = useState('');
+    const [snackBarDeatails, setSnackBarDetails] = useState({ 'type': 'info', 'duration': '6000', 'text': '' });
     const [inTextProp, setInTextProp] = useState(false);
     const [isDialogShown, setIsDialogShown] = useState(false);
     //Below is to reset the auto complete text value by re-rendering component.
@@ -28,11 +28,16 @@ function MethodListTable(props: any) {
 
     let selectedStepsToCopy: Step[] = [];
 
-    const closeDialog = (snackBarMessage: string, suggestionsToCopy: Step[]) => {
+    const closeSnackBar = () => {
+        //This is needed for re-rendering on clicking same button again.
+        setSnackBarDetails({ 'type': 'info', 'duration': '6000', 'text': '' })
+    }
+
+    const closeEditStepDialog = (snackBarMessage: string, suggestionsToCopy: Step[]) => {
         setIsDialogShown(false);
         setTimeout(() => {
             if (snackBarMessage && snackBarMessage.length > 0) {
-                setSnackBarMessage(snackBarMessage);
+                setSnackBarDetails({ 'type': 'success', 'duration': '10000', 'text': 'Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.' });
                 let count = 0;
                 for (const obj of suggestionsToCopy) {
                     obj.id = ++count;
@@ -48,10 +53,10 @@ function MethodListTable(props: any) {
                 navigator.clipboard
                   .writeText(textArea.value)
                   .then(() => {
-                setSnackBarMessage('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
+                setShowSnackBar('Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.');
                   })
                   .catch(e => {
-                    setSnackBarMessage(e)
+                    setShowSnackBar(e)
                   });
                   */
                 document.body.removeChild(textArea);
@@ -100,10 +105,6 @@ function MethodListTable(props: any) {
     const apiSampleStepDropdownOptions = ['GET Steps', 'POST Steps', 'PUT Steps', 'DELETE Steps'];
     const setupSampleStepDropdownOptions = ['Database Setup', 'Browser Setup', 'Mobile Setup', 'API Setup', 'General Setup'];
 
-    const handleClose = () => {
-        setSnackBarMessage('');
-    };
-
     const onDragEnd = (result) => {
         const { destination, source } = result;
         if (!destination)
@@ -112,16 +113,12 @@ function MethodListTable(props: any) {
             return;
 
         let sourceText = selectedStepsToCopy[source.index]
-        let updatedDestIndex = destination.index === 0 ? 0 : destination.index - 1;
+        let updatedDestIndex = (destination.index > source.index) ? destination.index - 1 : destination.index;
 
         selectedStepsToCopy.splice(source.index, 1);
         selectedStepsToCopy.splice(updatedDestIndex, 0, sourceText)
 
-        let count = 1;
-
-        selectedStepsToCopy = selectedStepsToCopy.map(e => { return { ...e, id: count++ } });
         setSelectedSteps(selectedStepsToCopy);
-
     }
 
     let onDeleteStep = (step: Step) => {
@@ -129,6 +126,12 @@ function MethodListTable(props: any) {
         const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
         selectedStepsToCopy.splice(index, 1);
         setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
+    };
+
+    let onHelpStep = (step: Step) => {
+        const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
+        let text: string = selectedStepsToCopy[index].help;
+        setSnackBarDetails({ 'type': 'info', 'duration': '6000', 'text': text });
     };
 
     const updateStepTextChange = (valuePassed: any) => {
@@ -162,7 +165,7 @@ function MethodListTable(props: any) {
         textArea.focus();
         textArea.select();
         document.execCommand('copy');
-        setSnackBarMessage('Copied steps to clipboard. You can paste it in FitNesse page and execute.');
+        setSnackBarDetails({ 'type': 'success', 'duration': '6000', 'text': 'Copied steps to clipboard. You can paste it in FitNesse page and execute.' });
         document.body.removeChild(textArea);
         setSelectedSteps(selectedStepsToCopy);
     };
@@ -196,12 +199,7 @@ function MethodListTable(props: any) {
 
     return (
         <div>
-            <Snackbar
-                open={snackBarMessage.length > 0}
-                autoHideDuration={6000}
-                onClose={handleClose}
-                message={snackBarMessage}
-            />
+            {snackBarDeatails.text.length > 0 && <CustomSnackBar snackBarMessage={snackBarDeatails.text} duration={snackBarDeatails.duration} type={snackBarDeatails.type} closeSnackBar={closeSnackBar} />}
             <Transition in={inTextProp} timeout={duration}>
                 {state => (
                     <div style={{
@@ -242,16 +240,14 @@ function MethodListTable(props: any) {
                                                         </IconButton>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <ConditionalWrapper
-                                                            condition={e.help && e.help.length > 0}
-                                                            wrapper={(children: ReactElement<any, any>) =>
-                                                                <Tooltip arrow={true} followCursor={true} title={e.help}>
-                                                                    {children}
-                                                                </Tooltip>}
-                                                        >
-                                                            {getSuggestedCellsAsPlainText(e)}
-                                                        </ConditionalWrapper>
+                                                        {getSuggestedCellsAsPlainText(e)}
                                                     </TableCell>
+                                                    {e.help.length > 0 &&
+                                                        <TableCell>
+                                                            <IconButton size="small" onClick={() => onHelpStep(e)}>
+                                                                <Help />
+                                                            </IconButton>
+                                                        </TableCell>}
                                                 </div>
                                             )}
                                         </Draggable>
@@ -287,7 +283,7 @@ function MethodListTable(props: any) {
                 <div />
                 <div />
                 <Stack direction="row" spacing={1}>
-                    {isDialogShown && <SuggestionEditDialog setSnackBarMessage={setSnackBarMessage} closeDialog={closeDialog} suggestions={suggestions} />}
+                    {isDialogShown && <SuggestionEditDialog closeDialog={closeEditStepDialog} suggestions={suggestions} />}
                     {suggestions.length > 0 &&
                         props.radioSelected.includes("api")
                         ? <SplitButton buttonText='Add Sample' tooltipText='Add sample API steps from dropdown.' options={apiSampleStepDropdownOptions} handleMenuItemClick={getSampleStepFor}></SplitButton>
@@ -303,7 +299,6 @@ function MethodListTable(props: any) {
         </div >
     );
 };
-
 
 MethodListTable.propTypes = {
     radioSelected: PropTypes.string.isRequired,
