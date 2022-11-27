@@ -3,7 +3,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useEffect, useState } from "react";
 import { Step } from "../model/step.model";
 import { Button, IconButton, Stack, TableCell, Tooltip } from "@mui/material";
-import { CopyAll, Delete, Edit, Help, PlaylistAdd } from "@mui/icons-material";
+import { ContentCopy, CopyAll, Delete, Edit, Help, PlaylistAdd } from "@mui/icons-material";
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
 import SuggestionEditDialog from './SuggestionEditDialog';
@@ -128,6 +128,18 @@ function MethodListTable(props: any) {
         setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
     };
 
+    let onCopyStep = (step: Step) => {
+        let textToCopy = selectedStepsToCopy.find(e => step.id === e.id).step;
+        var textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        setSnackBarDetails({ 'type': 'success', 'duration': '6000', 'text': 'Copied step to clipboard. You can paste it in FitNesse test.' });
+        document.body.removeChild(textArea);
+    }
+
     let onHelpStep = (step: Step) => {
         const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
         let text: string = selectedStepsToCopy[index].help;
@@ -158,7 +170,7 @@ function MethodListTable(props: any) {
         setInTextProp(false);
     };
 
-    const onCopySteps = () => {
+    const onCopyAllSteps = () => {
         var textArea = document.createElement("textarea");
         textArea.value = "!|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
         document.body.appendChild(textArea);
@@ -242,6 +254,13 @@ function MethodListTable(props: any) {
                                                     <TableCell>
                                                         {getSuggestedCellsAsPlainText(e)}
                                                     </TableCell>
+                                                    <TableCell>
+                                                        <Tooltip title="Copy this step to clipboard.">
+                                                            <IconButton size="small" onClick={() => onCopyStep(e)}>
+                                                                <ContentCopy />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </TableCell>
                                                     {e.help.length > 0 &&
                                                         <TableCell>
                                                             <IconButton size="small" onClick={() => onHelpStep(e)}>
@@ -293,7 +312,7 @@ function MethodListTable(props: any) {
                                 ? <Tooltip title={<span className='tooltip'>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</span>}><Button color="primary" variant="contained" endIcon={<PlaylistAdd />} onClick={addSampleSteps}>Add Sample</Button></Tooltip>
                                 : false}
                     {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Delete all steps above.</span>}><Button color="primary" variant="contained" endIcon={<Delete />} onClick={clearSteps}>Delete</Button></Tooltip>}
-                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Copy steps above to be pasted in FitNesse test.</span>}><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopySteps}>Copy</Button></Tooltip>}
+                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Copy steps above to be pasted in FitNesse test.</span>}><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopyAllSteps}>Copy</Button></Tooltip>}
                 </Stack>
             </div>
         </div >
