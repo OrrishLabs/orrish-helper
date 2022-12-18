@@ -1,53 +1,31 @@
-import { useEffect, useState } from 'react';
-import StepAreaRadioButton from './components/StepAreaRadioButton';
-import MethodListTable from './components/MethodListTable';
-import GuidedTour from './components/GuidedTour';
+import { createTheme, ThemeProvider } from '@mui/material';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
+import HomePage from './pages/Home';
+import OthersPage from './pages/Others';
 
 function App() {
 
-  /*Hardcoded value for testing
-  const [radioValues, setRadioValues] = useState(["1", "2"]);
-  const [steps, setSteps] = useState([{ id: 1, "step": "|Set request headers |applicationReferenceId=$value,first_name=FirstName,last_name=LastName|", "help": "help1" }, { id: 2, "step": "|Set form values|key1:value1,key2:value2|  ", "help": "help2" }]);
-  //*/
-  ///*
-  const [radioValues, setRadioValues] = useState([]);
-  const [steps, setSteps] = useState([]);
-  //*/
-  const [radioSelected, setRadioSelected] = useState('');
-
-  let currentOrigin = window.location.origin;
-
-  useEffect(() => {
-    if (radioValues.length === 0) {
-      fetch(currentOrigin + '/files/all-steps.json')
-        .then(response => { return response.json(); })
-        .then(data => {
-          setRadioValues(data.steps);
-        });
+  const theme = createTheme({
+    palette: {
+      primary: {
+        main: '#5CA9FE'
+      },
+      secondary: {
+        main: '#DFDCE3'
+      }
     }
-  }, [currentOrigin, radioValues.length]);
-
-  const changedRadioSelection = (value: string) => {
-    setRadioSelected(value);
-    fetch(currentOrigin + '/files/' + value)
-      .then(response => {
-        return response.json();
-      })
-      .then(data => {
-        setSteps(data);
-      }).catch(e => {
-        setSteps([]);
-      });
-  };
-
+  });
 
   return (
-    <div className='margin center-align'>
-      <GuidedTour />
-      <StepAreaRadioButton values={radioValues} valueSelected={changedRadioSelection} />
-      <MethodListTable stepList={steps} radioSelected={radioSelected}></MethodListTable>
-    </div>
+    <ThemeProvider theme={theme}>
+      <BrowserRouter>
+        <Routes>
+          <Route path='/' element={<HomePage />}></Route>
+          <Route path='others' element={<OthersPage />}></Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

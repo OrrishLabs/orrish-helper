@@ -36,7 +36,7 @@ const EditableTable = (props: any) => {
             event.api.setRowData(items);
             updateSuggestions(items);
         } else {
-            props.setSnackBarMessage('Step should start and end with |');
+            props.setSnackBarErrorMessage('Step should start and end with |');
         }
     }, [updateSuggestions, props]);
 

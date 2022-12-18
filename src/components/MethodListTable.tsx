@@ -16,7 +16,7 @@ function MethodListTable(props: any) {
 
     const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
-    const [snackBarDeatails, setSnackBarDetails] = useState({ 'type': 'info', 'duration': '6000', 'text': '' });
+    const [snackBarDetails, setSnackBarDetails] = useState({ 'type': 'info', 'duration': 6000, 'text': '' });
     const [inTextProp, setInTextProp] = useState(false);
     const [isDialogShown, setIsDialogShown] = useState(false);
     //Below is to reset the auto complete text value by re-rendering component.
@@ -30,20 +30,31 @@ function MethodListTable(props: any) {
 
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
-        setSnackBarDetails({ 'type': 'info', 'duration': '6000', 'text': '' })
+        setSnackBarDetails({ 'type': 'info', 'duration': 6000, 'text': '' })
     }
 
-    const closeEditStepDialog = (snackBarMessage: string, suggestionsToCopy: Step[]) => {
+    const closeEditStepDialog = (typeOfAction: string, suggestionsToCopy: Step[]) => {
         setIsDialogShown(false);
-        setTimeout(() => {
-            if (snackBarMessage && snackBarMessage.length > 0) {
-                setSnackBarDetails({ 'type': 'success', 'duration': '10000', 'text': 'Steps copied to clipboard. You can use UpdateAvailableSteps page to persist the steps.' });
+        setTimeout(async () => {
+            if (typeOfAction.includes('delete') || typeOfAction.includes('rename')) {
+                setSnackBarDetails({ 'type': 'success', 'duration': 5000, 'text': 'Steps ' + typeOfAction + 'd.  You may have to refresh to see the changes.' });
+            } else if (typeOfAction.includes('save')) {
+                // Saves texts.
+                let baseUrlToTrigger = window.location.origin + '/SaveSteps?test&nohistory&FILE_NAME=' + props.tabValue + '-' + props.radioSelected + '&CONTENT=';
+                let values = (JSON.stringify(suggestionsToCopy)).match(/(.{1,900})/g)
+                for (var i = 0; i < values.length; i++) {
+                    let urlToTrigger = baseUrlToTrigger + encodeURIComponent('!-' + values[i] + '-!');
+                    urlToTrigger += (i === 0) ? "&CREATE_FILE=true" : "&APPEND_FILE=true";
+                    await fetch(urlToTrigger);
+                }
+                setSnackBarDetails({ 'type': 'success', 'duration': 10000, 'text': 'Steps may have been persisted. You may have to refresh to see the changes.' });
+            } else if (typeOfAction.includes('copy')) {
                 let count = 0;
                 for (const obj of suggestionsToCopy) {
                     obj.id = ++count;
                 }
                 var textArea = document.createElement("textarea");
-                textArea.value = JSON.stringify(suggestionsToCopy);
+                textArea.value = JSON.stringify(suggestionsToCopy, null, 2);
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
@@ -60,6 +71,7 @@ function MethodListTable(props: any) {
                   });
                   */
                 document.body.removeChild(textArea);
+                setSnackBarDetails({ 'type': 'success', 'duration': 10000, 'text': 'Steps are copied to clipboard.' });
             }
         }, 100)
     };
@@ -82,6 +94,10 @@ function MethodListTable(props: any) {
         exiting: { opacity: 0 },
         exited: { opacity: 0 },
     };
+
+    const setSnackBarErrorMessage = (message: string) => {
+        setSnackBarDetails({ 'type': 'error', 'duration': 6000, 'text': message });
+    }
 
     const appendSelectedSteps = (newValue: string) => {
         let valueSteps = suggestions.filter(e => e.step.includes(newValue.trim()));
@@ -136,14 +152,14 @@ function MethodListTable(props: any) {
         textArea.focus();
         textArea.select();
         document.execCommand('copy');
-        setSnackBarDetails({ 'type': 'success', 'duration': '6000', 'text': 'Copied step to clipboard. You can paste it in FitNesse test.' });
+        setSnackBarDetails({ 'type': 'success', 'duration': 6000, 'text': 'Copied step to clipboard. You can paste it in FitNesse test.' });
         document.body.removeChild(textArea);
     }
 
     let onHelpStep = (step: Step) => {
         const index = selectedStepsToCopy.findIndex(e => step.id === e.id);
         let text: string = selectedStepsToCopy[index].help;
-        setSnackBarDetails({ 'type': 'info', 'duration': '6000', 'text': text });
+        setSnackBarDetails({ 'type': 'info', 'duration': 6000, 'text': text });
     };
 
     const updateStepTextChange = (valuePassed: any) => {
@@ -172,12 +188,12 @@ function MethodListTable(props: any) {
 
     const onCopyAllSteps = () => {
         var textArea = document.createElement("textarea");
-        textArea.value = "!|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
+        textArea.value = "^|script|\n" + selectedStepsToCopy.map(e => e.step).join('\n');
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
         document.execCommand('copy');
-        setSnackBarDetails({ 'type': 'success', 'duration': '6000', 'text': 'Copied steps to clipboard. You can paste it in FitNesse page and execute.' });
+        setSnackBarDetails({ 'type': 'success', 'duration': 6000, 'text': 'Copied steps to clipboard. You can paste it in FitNesse page and execute.' });
         document.body.removeChild(textArea);
         setSelectedSteps(selectedStepsToCopy);
     };
@@ -211,7 +227,7 @@ function MethodListTable(props: any) {
 
     return (
         <div>
-            {snackBarDeatails.text.length > 0 && <CustomSnackBar snackBarMessage={snackBarDeatails.text} duration={snackBarDeatails.duration} type={snackBarDeatails.type} closeSnackBar={closeSnackBar} />}
+            {snackBarDetails.text.length > 0 && <CustomSnackBar snackBarMessage={snackBarDetails.text} duration={snackBarDetails.duration} type={snackBarDetails.type} closeSnackBar={closeSnackBar} />}
             <Transition in={inTextProp} timeout={duration}>
                 {state => (
                     <div style={{
@@ -297,22 +313,31 @@ function MethodListTable(props: any) {
             />
             <br />
             <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-around", gap: "10px" }}>
-                {suggestions.length > 0 && <Tooltip title={<span className='tooltip'>Edit available suggestions for {props.radioSelected.split('-')[0].toUpperCase()}</span>}><Button color="primary" variant="contained" endIcon={<Edit />} onClick={showDialog}>Edit</Button></Tooltip>}
+                {suggestions.length > 0 &&
+                    <Tooltip title={<span className='tooltip'>Edit available suggestions for {props.radioSelected.split('-')[0].toUpperCase()}</span>}>
+                        <Button color="secondary" variant="contained" startIcon={<Edit />} onClick={showDialog}>Edit</Button>
+                    </Tooltip>}
                 <div id='bottom-buttons' />
                 <div />
                 <div />
                 <Stack direction="row" spacing={1}>
-                    {isDialogShown && <SuggestionEditDialog closeDialog={closeEditStepDialog} suggestions={suggestions} />}
+                    {isDialogShown && <SuggestionEditDialog area={props.tabValue} radio={props.radioSelected} setSnackBarErrorMessage={setSnackBarErrorMessage} closeDialog={closeEditStepDialog} suggestions={suggestions} />}
                     {suggestions.length > 0 &&
                         props.radioSelected.includes("api")
                         ? <SplitButton buttonText='Add Sample' tooltipText='Add sample API steps from dropdown.' options={apiSampleStepDropdownOptions} handleMenuItemClick={getSampleStepFor}></SplitButton>
                         : props.radioSelected.includes("setup")
                             ? <SplitButton buttonText='Add Sample' tooltipText='SetUp steps need to go to SetUp FitNesse page. Do not combine SetUp and test steps. ' options={setupSampleStepDropdownOptions} handleMenuItemClick={getSampleStepFor}></SplitButton>
                             : props.radioSelected.includes("browser") || props.radioSelected.includes("mobile")
-                                ? <Tooltip title={<span className='tooltip'>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</span>}><Button color="primary" variant="contained" endIcon={<PlaylistAdd />} onClick={addSampleSteps}>Add Sample</Button></Tooltip>
+                                ? <Tooltip title={<span className='tooltip'>Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</span>}><Button color="secondary" variant="contained" startIcon={<PlaylistAdd />} onClick={addSampleSteps}>Sample</Button></Tooltip>
                                 : false}
-                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Delete all steps above.</span>}><Button color="primary" variant="contained" endIcon={<Delete />} onClick={clearSteps}>Delete</Button></Tooltip>}
-                    {selectedSteps.length > 0 && <Tooltip title={<span className='tooltip'>Copy steps above to be pasted in FitNesse test.</span>}><Button color="primary" variant="contained" endIcon={<CopyAll />} onClick={onCopyAllSteps}>Copy</Button></Tooltip>}
+                    {selectedSteps.length > 0 &&
+                        <Tooltip title={<span className='tooltip'>Delete all steps above.</span>}>
+                            <Button color="secondary" style={{ backgroundColor: 'lightcoral' }} variant="contained" startIcon={<Delete />} onClick={clearSteps}>Delete</Button>
+                        </Tooltip>}
+                    {selectedSteps.length > 0 &&
+                        <Tooltip title={<span className='tooltip'>Copy steps above to be pasted in FitNesse test.</span>}>
+                            <Button color="secondary" style={{ backgroundColor: 'yellowgreen' }} variant="contained" startIcon={<CopyAll />} onClick={onCopyAllSteps}>Copy</Button>
+                        </Tooltip>}
                 </Stack>
             </div>
         </div >
@@ -320,6 +345,7 @@ function MethodListTable(props: any) {
 };
 
 MethodListTable.propTypes = {
+    tabValue: PropTypes.string.isRequired,
     radioSelected: PropTypes.string.isRequired,
     stepList: PropTypes.array.isRequired,
 }

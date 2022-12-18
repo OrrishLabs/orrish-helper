@@ -12,7 +12,15 @@ const GuidedTour = () => {
             disableBeacon: true,
             placement: "auto"
 
-        }, {
+        },
+        {
+            target: '#add-new-area',
+            content: 'To add a new area, click this button.',
+            disableBeacon: true,
+            placement: "auto"
+
+        },
+        {
             target: '#suggestion-box',
             content: 'Type here for suggestions on the selected radio or click from dropdown.',
         },

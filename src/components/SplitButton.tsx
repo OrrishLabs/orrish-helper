@@ -49,7 +49,7 @@ export default function SplitButton(props: any) {
 
     return (
         <React.Fragment>
-            <ButtonGroup size='small' variant="contained" ref={anchorRef} aria-label="split button" >
+            <ButtonGroup size='small' color="secondary" variant="contained" ref={anchorRef} aria-label="split button" >
                 <Tooltip title={<span className='tooltip'>{props.tooltipText}</span>}><Button onClick={handleClick}>{props.buttonText}</Button></Tooltip>
                 <Button
                     style={{ textTransform: 'none' }}

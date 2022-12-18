@@ -11,7 +11,7 @@ function StepAreaRadioButton(props: any) {
                 row
                 onChange={e => props.valueSelected(e.target.value)}
             >
-                {props.values.map((e: string) =>
+                {props.radioValues.map((e: string) =>
                     <FormControlLabel key={e} value={e} control={<Radio />} label={e.split(".json")[0].split("-")[0]} />
                 )}
             </RadioGroup>
