@@ -1,7 +1,6 @@
-import { useState } from "react";
-import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
-import { Button } from "@mui/material";
-
+import { useState } from 'react';
+import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import { Button } from '@mui/material';
 
 const GuidedTour = () => {
     const [run, setRun] = useState(false);
@@ -10,27 +9,25 @@ const GuidedTour = () => {
             target: '#radio-group',
             content: 'Select one of the radio buttons to populate suggestions.',
             disableBeacon: true,
-            placement: "auto"
-
+            placement: 'auto'
         },
         {
             target: '#add-new-area',
             content: 'To add a new area, click this button.',
             disableBeacon: true,
-            placement: "auto"
-
+            placement: 'auto'
         },
         {
             target: '#suggestion-box',
-            content: 'Type here for suggestions on the selected radio or click from dropdown.',
+            content: 'Type here for suggestions on the selected radio or click from dropdown.'
         },
         {
             target: '#editable-row',
-            content: 'The data in green are editable. You can edit them to reflect the right data.',
+            content: 'The data in green are editable. You can edit them to reflect the right data.'
         },
         {
             target: '#bottom-buttons',
-            content: 'Buttons will appear on selecting a radio. Tooltip on each button shows more details.',
+            content: 'Buttons will appear on selecting a radio. Tooltip on each button shows more details.'
         }
     ]);
 
@@ -61,12 +58,14 @@ const GuidedTour = () => {
                 disableCloseOnEsc={true}
                 styles={{
                     options: {
-                        zIndex: 10000,
+                        zIndex: 10000
                     },
-                    buttonNext: { color: "primary", backgroundColor: "" },
-                    buttonBack: { color: "primary" },
-                }} />Show How To Create Test
-        </Button >
+                    buttonNext: { color: 'primary', backgroundColor: '' },
+                    buttonBack: { color: 'primary' }
+                }}
+            />
+            Show How To Create Test
+        </Button>
     );
 };
 

@@ -3,7 +3,6 @@ import { List, arrayMove } from 'react-movable';
 import { Step } from '../model/step.model';
 
 function DraggableTable(props: any) {
-
     const tableStyles = {
         background: '#eaebec',
         borderSpacing: 0
@@ -45,7 +44,7 @@ function DraggableTable(props: any) {
             <List
                 beforeDrag={({ elements, index }) => {
                     const cells = Array.from(elements[index].children);
-                    const widths = cells.map(cell => window.getComputedStyle(cell).width);
+                    const widths = cells.map((cell) => window.getComputedStyle(cell).width);
                     setWidths(widths);
                 }}
                 values={items}
@@ -94,6 +93,6 @@ function DraggableTable(props: any) {
             />
         </div>
     );
-};
+}
 
 export default DraggableTable;

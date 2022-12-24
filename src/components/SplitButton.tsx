@@ -11,9 +11,7 @@ import MenuList from '@mui/material/MenuList';
 import { Tooltip } from '@mui/material';
 import PropTypes from 'prop-types';
 
-
 export default function SplitButton(props: any) {
-
     const options = props.options;
 
     const [open, setOpen] = useState(false);
@@ -24,10 +22,7 @@ export default function SplitButton(props: any) {
         console.info(`You clicked ${options[selectedIndex]}`);
     };
 
-    const handleMenuItemClick = (
-        event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-        index: number,
-    ) => {
+    const handleMenuItemClick = (event: React.MouseEvent<HTMLLIElement, MouseEvent>, index: number) => {
         props.handleMenuItemClick(options[index]);
         setSelectedIndex(index);
         setOpen(false);
@@ -38,10 +33,7 @@ export default function SplitButton(props: any) {
     };
 
     const handleClose = (event: Event) => {
-        if (
-            anchorRef.current &&
-            anchorRef.current.contains(event.target as HTMLElement)
-        ) {
+        if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
             return;
         }
         setOpen(false);
@@ -49,8 +41,10 @@ export default function SplitButton(props: any) {
 
     return (
         <React.Fragment>
-            <ButtonGroup size='small' color="secondary" variant="contained" ref={anchorRef} aria-label="split button" >
-                <Tooltip title={<span className='tooltip'>{props.tooltipText}</span>}><Button onClick={handleClick}>{props.buttonText}</Button></Tooltip>
+            <ButtonGroup size="small" color="secondary" variant="contained" ref={anchorRef} aria-label="split button">
+                <Tooltip title={<span className="tooltip">{props.tooltipText}</span>}>
+                    <Button onClick={handleClick}>{props.buttonText}</Button>
+                </Tooltip>
                 <Button
                     style={{ textTransform: 'none' }}
                     size="small"
@@ -63,29 +57,19 @@ export default function SplitButton(props: any) {
                     <ArrowDropDownIcon />
                 </Button>
             </ButtonGroup>
-            <Popper
-                open={open}
-                anchorEl={anchorRef.current}
-                role={undefined}
-                transition
-                disablePortal
-            >
+            <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
                 {({ TransitionProps, placement }) => (
                     <Grow
                         {...TransitionProps}
                         style={{
-                            transformOrigin:
-                                placement === 'bottom' ? 'center top' : 'center bottom',
+                            transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'
                         }}
                     >
                         <Paper>
                             <ClickAwayListener onClickAway={handleClose}>
                                 <MenuList id="split-button-menu" autoFocusItem>
                                     {options.map((option, index) => (
-                                        <MenuItem
-                                            key={option}
-                                            onClick={(event) => handleMenuItemClick(event, index)}
-                                        >
+                                        <MenuItem key={option} onClick={(event) => handleMenuItemClick(event, index)}>
                                             {option}
                                         </MenuItem>
                                     ))}
@@ -103,5 +87,5 @@ SplitButton.propTypes = {
     tooltipText: PropTypes.string.isRequired,
     buttonText: PropTypes.string.isRequired,
     options: PropTypes.arrayOf(PropTypes.string).isRequired,
-    handleMenuItemClick: PropTypes.func.isRequired,
-}
+    handleMenuItemClick: PropTypes.func.isRequired
+};
