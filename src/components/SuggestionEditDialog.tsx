@@ -12,7 +12,6 @@ import { Delete, Edit, SaveOutlined } from '@mui/icons-material';
 
 function SuggestionEditDialog(props: any) {
     const [suggestions, setSuggestions] = useState<Step[]>([]);
-    const [isNewAreaTextBoxShown, setIsNewAreaTextBoxShown] = useState(false);
     const [newAreaTextBoxValue, setNewAreaTextValue] = useState('');
     const [saveClicked, setSaveClicked] = useState(false);
 
@@ -54,6 +53,7 @@ function SuggestionEditDialog(props: any) {
     };
 
     const deleteArea = async () => {
+        setSaveClicked(true);
         let area = props.area;
         let radio = area + '-' + props.radio;
         await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' })
@@ -69,38 +69,37 @@ function SuggestionEditDialog(props: any) {
                 let stringified = JSON.stringify(data);
                 //First update the all-steps.json by recreating the file
                 let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-                await fetch(urlToTrigger);
+                await fetch(urlToTrigger).then((respone) => respone.text());
                 //Next create a file
                 urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&DELETE_FILE=true&FILE_NAME=' + radio;
-                await fetch(urlToTrigger);
+                await fetch(urlToTrigger).then((respone) => respone.text());
             });
+        setSaveClicked(false);
         props.closeDialog('delete', null);
     };
 
     const renameArea = async () => {
-        if (isNewAreaTextBoxShown) {
-            let oldFileName = props.area + '-' + props.radio;
-            let newFileName = props.area + '-' + newAreaTextBoxValue + '-steps.json';
-            let currentOrigin = window.location.origin;
-            await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' })
-                .then((response) => {
-                    return response.json();
-                })
-                .then(async (data) => {
-                    let currentArray: string[] = data[props.area];
-                    currentArray.splice(currentArray.indexOf(oldFileName), 1, newFileName);
-                    let stringified = JSON.stringify(data);
-                    //First update the all-steps.json by re-creating the file
-                    let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-                    await fetch(urlToTrigger);
-                    //Next rename the file
-                    urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&RENAME_FILE=true&OLD_FILE_NAME=' + oldFileName + '&NEW_FILE_NAME=' + newFileName;
-                    await fetch(urlToTrigger);
-                });
-            props.closeDialog('rename', null);
-        } else {
-            setIsNewAreaTextBoxShown(!isNewAreaTextBoxShown);
-        }
+        setSaveClicked(true);
+        let oldFileName = props.area + '-' + props.radio;
+        let newFileName = props.area + '-' + newAreaTextBoxValue + '-steps.json';
+        let currentOrigin = window.location.origin;
+        await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' })
+            .then((response) => {
+                return response.json();
+            })
+            .then(async (data) => {
+                let currentArray: string[] = data[props.area];
+                currentArray.splice(currentArray.indexOf(oldFileName), 1, newFileName);
+                let stringified = JSON.stringify(data);
+                //First update the all-steps.json by re-creating the file
+                let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
+                await fetch(urlToTrigger).then((respone) => respone.text());
+                //Next rename the file
+                urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&RENAME_FILE=true&OLD_FILE_NAME=' + oldFileName + '&NEW_FILE_NAME=' + newFileName;
+                await fetch(urlToTrigger).then((respone) => respone.text());
+            });
+        setSaveClicked(false);
+        props.closeDialog('rename', null);
     };
 
     return (
@@ -116,32 +115,26 @@ function SuggestionEditDialog(props: any) {
             </DialogContent>
             <DialogActions>
                 <Tooltip title="You will lose all the steps under this radio button.">
-                    <Button variant="contained" color="primary" style={{ textTransform: 'none', backgroundColor: 'salmon' }} startIcon={<Delete />} onClick={() => deleteArea()}>
+                    <Button variant="contained" color="primary" disabled={saveClicked} style={{ textTransform: 'none', backgroundColor: 'salmon' }} startIcon={<Delete />} onClick={() => deleteArea()}>
                         Delete '{props.radio.replace('-steps.json', '')}'
                     </Button>
                 </Tooltip>
+                <hr />
+                <TextField style={{ width: '20%' }} onKeyPress={(e) => validateNewName(e)} onChange={handleOnChange} id="standard-basic" label="New name." variant="standard" />
                 <Button
                     variant="contained"
                     color="primary"
                     style={{ textTransform: 'none', backgroundColor: 'yellowgreen' }}
                     startIcon={<Edit />}
                     onClick={() => renameArea()}
-                    disabled={isNewAreaTextBoxShown && newAreaTextBoxValue.length === 0}
+                    disabled={newAreaTextBoxValue.length === 0 || saveClicked || newAreaTextBoxValue === props.radio.replace('-steps.json', '')}
                 >
-                    {isNewAreaTextBoxShown ? 'Rename' : "Rename '" + props.radio.replace('-steps.json', '') + "'"}
+                    {"Rename '" + props.radio.replace('-steps.json', '') + "'"}
                 </Button>
-                {isNewAreaTextBoxShown && (
-                    <TextField
-                        style={{ width: '25%' }}
-                        onKeyPress={(e) => validateNewName(e)}
-                        onChange={handleOnChange}
-                        id="standard-basic"
-                        label="Enter new name and click Rename."
-                        variant="standard"
-                    />
-                )}
+
                 <hr />
-                {saveClicked && <CircularProgress variant="indeterminate" color="success" />}
+                {saveClicked && <CircularProgress variant="indeterminate" color="primary" />}
+                <hr />
                 <Button
                     disabled={saveClicked}
                     variant="contained"
@@ -150,7 +143,7 @@ function SuggestionEditDialog(props: any) {
                     startIcon={<SaveOutlined />}
                     onClick={() => copyOrSave('save')}
                 >
-                    Save
+                    Save Steps
                 </Button>
             </DialogActions>
         </Dialog>

@@ -1,5 +1,5 @@
 import { Close } from '@mui/icons-material';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, TextField } from '@mui/material';
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, TextField } from '@mui/material';
 import { _ } from 'ag-grid-community';
 import { useState, useEffect } from 'react';
 import CustomSnackBar from '../components/CustomSnackBar';
@@ -19,20 +19,15 @@ const HomePage = () => {
     const [newAreaTextValue, setNewAreaTextValue] = useState('');
     const [showSnackBar, setShowSnackBar] = useState(false);
     const [runEffect, setRunEffect] = useState(false);
+    const [saveClicked, setSaveClicked] = useState(false);
 
     let currentOrigin = window.location.origin;
     useEffect(() => {
-        setAllStepsJson({});
         setRadioValues([]);
         setRadioSelected('');
-        let counter = 0;
         const fetchData = async () => {
-            const response = await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' });
-            const data = await response.json();
-            if (areTwoJsonEqual(data, allStepsJson) && counter++ < 10) {
-                await sleep(500);
-                await fetchData();
-            } else {
+            await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' }).then(async (response) => {
+                const data = await response.json();
                 setAllStepsJson(data);
                 setCurrentTabValue('generic');
                 setRadioSelected('');
@@ -42,18 +37,10 @@ const HomePage = () => {
                         return e.replace('generic-', '');
                     })
                 );
-            }
+            });
         };
         fetchData();
-    }, [runEffect, allStepsJson, currentOrigin]);
-
-    const sleep = async (ms) => {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-    };
-
-    const areTwoJsonEqual = (jsonObject1, jsonObject2): boolean => {
-        return jsonObject1 && jsonObject2 ? _.jsonEquals(jsonObject1, jsonObject2) : false;
-    };
+    }, [runEffect, currentOrigin]);
 
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
@@ -93,8 +80,10 @@ const HomePage = () => {
         setOpenNewAreaDialog(true);
     };
 
-    const handleSaveNewAreaDialog = () => {
-        addSteps();
+    const handleSaveNewAreaDialog = async () => {
+        setSaveClicked(true);
+        await addNewArea();
+        setSaveClicked(false);
         handleCloseNewAreaDialog();
         setShowSnackBar(true);
     };
@@ -125,7 +114,7 @@ const HomePage = () => {
         });
     };
 
-    const addSteps = async () => {
+    const addNewArea = async () => {
         if (newAreaTextValue.length > 0) {
             let area = newAreaTextValue.split('-')[0];
             let radio = newAreaTextValue.split('-')[1];
@@ -141,11 +130,11 @@ const HomePage = () => {
             }
             //First update the all-steps.json by replacing the file.
             let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-            await fetch(urlToTrigger);
+            await fetch(urlToTrigger).then((respone) => respone.text());
             //Next create a file
             urlToTrigger =
                 currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=' + newAreaTextValue + '-steps.json&CONTENT=[{"id": 1,"step": "|sample step|","help": ""}]&CREATE_FILE=true';
-            await fetch(urlToTrigger);
+            await fetch(urlToTrigger).then((respone) => respone.text());
             setRunEffect(!runEffect);
         }
     };
@@ -180,6 +169,7 @@ const HomePage = () => {
                         </div>
                     </DialogContent>
                     <DialogActions>
+                        {saveClicked && <CircularProgress variant="indeterminate" color="info" />}
                         <Button onClick={handleSaveNewAreaDialog} disabled={!(newAreaTextValue.split('-')[0].length > 0) || !(newAreaTextValue.split('-')[1].length > 0)}>
                             Save
                         </Button>
