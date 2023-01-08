@@ -9,9 +9,11 @@
 /coverage
 
 # production
-build/*.*
 !build/static/js/main.*.js
 !build/static/css/main.*.css
+build/static/js/*.*
+build/static/css/*.*
+build/*.*
 dist
 
 # misc

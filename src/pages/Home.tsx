@@ -6,6 +6,7 @@ import CustomSnackBar from '../components/CustomSnackBar';
 import GuidedTour from '../components/GuidedTour';
 import MethodListTable from '../components/MethodListTable';
 import StepAreaRadioButton from '../components/StepAreaRadioButton';
+import { fileService } from '../services/persist-file-changes';
 import OthersPage from './Others';
 
 const HomePage = () => {
@@ -21,12 +22,11 @@ const HomePage = () => {
     const [runEffect, setRunEffect] = useState(false);
     const [saveClicked, setSaveClicked] = useState(false);
 
-    let currentOrigin = window.location.origin;
     useEffect(() => {
         setRadioValues([]);
         setRadioSelected('');
         const fetchData = async () => {
-            await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' }).then(async (response) => {
+            await fileService.readFile('all-steps.json').then(async (response) => {
                 const data = await response.json();
                 setAllStepsJson(data);
                 setCurrentTabValue('generic');
@@ -40,7 +40,7 @@ const HomePage = () => {
             });
         };
         fetchData();
-    }, [runEffect, currentOrigin]);
+    }, [runEffect]);
 
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
@@ -56,7 +56,8 @@ const HomePage = () => {
 
     const changedRadioSelection = (radioValue: string) => {
         setRadioSelected(radioValue);
-        fetch(currentOrigin + '/files/' + currentTabValue + '-' + radioValue, { cache: 'no-store' })
+        fileService
+            .readFile(currentTabValue + '-' + radioValue)
             .then((response) => {
                 return response.json();
             })
@@ -129,12 +130,9 @@ const HomePage = () => {
                 stringified = JSON.stringify(allStepsJson).replace('}', ',"' + area + '":["' + area + '-' + radio + '-steps.json"]}');
             }
             //First update the all-steps.json by replacing the file.
-            let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-            await fetch(urlToTrigger).then((respone) => respone.text());
+            await fileService.persistFile('all-steps.json', stringified);
             //Next create a file
-            urlToTrigger =
-                currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=' + newAreaTextValue + '-steps.json&CONTENT=[{"id": 1,"step": "|sample step|","help": ""}]&CREATE_FILE=true';
-            await fetch(urlToTrigger).then((respone) => respone.text());
+            await fileService.persistFile(newAreaTextValue + '-steps.json', '[{"id": 1,"step": "|sample step|","help": ""}]');
             setRunEffect(!runEffect);
         }
     };

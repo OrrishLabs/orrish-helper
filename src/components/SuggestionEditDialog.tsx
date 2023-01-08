@@ -9,6 +9,7 @@ import { Step } from '../model/step.model';
 import { useEffect, useState } from 'react';
 import { CircularProgress, TextField, Tooltip } from '@mui/material';
 import { Delete, Edit, SaveOutlined } from '@mui/icons-material';
+import { fileService } from '../services/persist-file-changes';
 
 function SuggestionEditDialog(props: any) {
     const [suggestions, setSuggestions] = useState<Step[]>([]);
@@ -16,7 +17,6 @@ function SuggestionEditDialog(props: any) {
     const [saveClicked, setSaveClicked] = useState(false);
 
     let suggestionsToCopy: Step[] = [];
-    let currentOrigin = window.location.origin;
 
     useEffect(() => {
         setSuggestions(props.suggestions);
@@ -56,7 +56,8 @@ function SuggestionEditDialog(props: any) {
         setSaveClicked(true);
         let area = props.area;
         let radio = area + '-' + props.radio;
-        await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' })
+        await fileService
+            .readFile('all-steps.json')
             .then((response) => {
                 return response.json();
             })
@@ -68,11 +69,9 @@ function SuggestionEditDialog(props: any) {
                 }
                 let stringified = JSON.stringify(data);
                 //First update the all-steps.json by recreating the file
-                let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-                await fetch(urlToTrigger).then((respone) => respone.text());
-                //Next create a file
-                urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&DELETE_FILE=true&FILE_NAME=' + radio;
-                await fetch(urlToTrigger).then((respone) => respone.text());
+                await fileService.persistFile('all-steps.json', stringified);
+                //Next delete a file
+                await fileService.deleteFile(radio);
             });
         setSaveClicked(false);
         props.closeDialog('delete', null);
@@ -82,8 +81,8 @@ function SuggestionEditDialog(props: any) {
         setSaveClicked(true);
         let oldFileName = props.area + '-' + props.radio;
         let newFileName = props.area + '-' + newAreaTextBoxValue + '-steps.json';
-        let currentOrigin = window.location.origin;
-        await fetch(currentOrigin + '/files/all-steps.json', { cache: 'no-store' })
+        await fileService
+            .readFile('all-steps.json')
             .then((response) => {
                 return response.json();
             })
@@ -92,11 +91,9 @@ function SuggestionEditDialog(props: any) {
                 currentArray.splice(currentArray.indexOf(oldFileName), 1, newFileName);
                 let stringified = JSON.stringify(data);
                 //First update the all-steps.json by re-creating the file
-                let urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=all-steps.json&CONTENT=' + stringified + '&CREATE_FILE=true';
-                await fetch(urlToTrigger).then((respone) => respone.text());
+                await fileService.persistFile('all-steps.json', stringified);
                 //Next rename the file
-                urlToTrigger = currentOrigin + '/UpdateSteps?suite&format=junit&nohistory&RENAME_FILE=true&OLD_FILE_NAME=' + oldFileName + '&NEW_FILE_NAME=' + newFileName;
-                await fetch(urlToTrigger).then((respone) => respone.text());
+                await fileService.renameFile(oldFileName, newFileName);
             });
         setSaveClicked(false);
         props.closeDialog('rename', null);

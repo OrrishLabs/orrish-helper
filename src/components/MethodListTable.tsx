@@ -11,6 +11,7 @@ import { sampleStepsService } from '../services/get-sample-steps';
 import SplitButton from './SplitButton';
 import PropTypes from 'prop-types';
 import CustomSnackBar from './CustomSnackBar';
+import { fileService } from '../services/persist-file-changes';
 
 function MethodListTable(props: any) {
     const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
@@ -38,13 +39,7 @@ function MethodListTable(props: any) {
             props.setRunEffectState(!props.runEffectState);
         } else if (typeOfAction.includes('save')) {
             // Saves texts.
-            let baseUrlToTrigger = window.location.origin + '/UpdateSteps?suite&format=junit&nohistory&FILE_NAME=' + props.tabValue + '-' + props.radioSelected + '&CONTENT=';
-            let values = JSON.stringify(suggestionsToCopy).match(/(.{1,900})/g);
-            for (var i = 0; i < values.length; i++) {
-                let urlToTrigger = baseUrlToTrigger + encodeURIComponent('!-' + values[i] + '-!');
-                urlToTrigger += i === 0 ? '&CREATE_FILE=true' : '&APPEND_FILE=true';
-                await fetch(urlToTrigger).then((respone) => respone.text());
-            }
+            await fileService.persistFile(props.tabValue + '-' + props.radioSelected, JSON.stringify(suggestionsToCopy));
             setSnackBarDetails({ type: 'success', duration: 10000, text: 'Steps are saved.' });
         } else if (typeOfAction.includes('copy')) {
             let count = 0;
