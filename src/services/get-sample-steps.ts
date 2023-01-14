@@ -1,3 +1,5 @@
+import { fileService } from "./persist-file-changes";
+
 async function getSampleSteps(area: string) {
     let fileName = 'sample-' + (area.includes('Setup') ? 'setup-' : '');
     fileName += area.toLowerCase().includes('browser')
@@ -18,14 +20,7 @@ async function getSampleSteps(area: string) {
         fileName = fileName.replace('.json', '-');
     }
 
-    const currentOrigin = window.location.origin;
-    const response = await fetch(currentOrigin + '/files/' + fileName, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json'
-        }
-    });
+    const response = await fileService.readFile(fileName);
     const body = await response.json();
     return body;
 }

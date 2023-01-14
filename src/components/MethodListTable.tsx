@@ -6,7 +6,7 @@ import { Button, IconButton, Stack, TableCell, Tooltip } from '@mui/material';
 import { ContentCopy, CopyAll, Delete, Edit, Help, PlaylistAdd } from '@mui/icons-material';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
-import SuggestionEditDialog from './SuggestionEditDialog';
+import SuggestionEditPage from '../pages/SuggestionEditPage';
 import { sampleStepsService } from '../services/get-sample-steps';
 import SplitButton from './SplitButton';
 import PropTypes from 'prop-types';
@@ -203,28 +203,28 @@ function MethodListTable(props: any) {
                 if (count === 1 && values[count].startsWith('$') && values[count].trim().endsWith('=')) {
                     rowValue = rowValue
                         ? [
-                              rowValue,
-                              <span
-                                  contentEditable
-                                  suppressContentEditableWarning
-                                  id={((eachStep.id! as unknown as string) + '-' + count) as string}
-                                  onInput={(e) => updateStepTextChange(e)}
-                                  className="data"
-                              >
-                                  {values[1]}
-                              </span>
-                          ]
+                            rowValue,
+                            <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                id={((eachStep.id! as unknown as string) + '-' + count) as string}
+                                onInput={(e) => updateStepTextChange(e)}
+                                className="data"
+                            >
+                                {values[1]}
+                            </span>
+                        ]
                         : (rowValue = (
-                              <span
-                                  contentEditable
-                                  suppressContentEditableWarning
-                                  id={((eachStep.id! as unknown as string) + '-' + count) as string}
-                                  onInput={(e) => updateStepTextChange(e)}
-                                  className="data"
-                              >
-                                  {values[1]}
-                              </span>
-                          ));
+                            <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                id={((eachStep.id! as unknown as string) + '-' + count) as string}
+                                onInput={(e) => updateStepTextChange(e)}
+                                className="data"
+                            >
+                                {values[1]}
+                            </span>
+                        ));
                 } else {
                     if (isEditable) {
                         rowValue = [
@@ -344,7 +344,7 @@ function MethodListTable(props: any) {
                 <div />
                 <Stack direction="row" spacing={1}>
                     {isDialogShown && (
-                        <SuggestionEditDialog
+                        <SuggestionEditPage
                             area={props.tabValue}
                             radio={props.radioSelected}
                             setSnackBarErrorMessage={setSnackBarErrorMessage}

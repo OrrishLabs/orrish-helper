@@ -6,8 +6,8 @@ This is helpful for QA to see the available methods to be used in FitNesse while
 ## Building locally
 
 1. Run `npm install`
-2. Run`npm start`
-3. There is logic in place to use the session storage in development environment instead of file system.
+2. Run `npm start`
+3. In prod, the steps are read from and written to local file system. In development environment sessionStorage is used instead of file system.
 
 ## Using in FitNesse based project
 

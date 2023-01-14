@@ -1,46 +1,53 @@
 import { Close } from '@mui/icons-material';
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, TextField } from '@mui/material';
 import { _ } from 'ag-grid-community';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import CustomSnackBar from '../components/CustomSnackBar';
 import GuidedTour from '../components/GuidedTour';
 import MethodListTable from '../components/MethodListTable';
 import StepAreaRadioButton from '../components/StepAreaRadioButton';
 import { fileService } from '../services/persist-file-changes';
-import OthersPage from './Others';
+import OthersPage from './OthersPage';
 
-const HomePage = () => {
-    const [currentTabValue, setCurrentTabValue] = useState('generic');
+const LandingPage = () => {
+
+    const ACTIONS = {
+        UPDATE_TAB_VALUE: 'update',
+        RADIO_SELECTED: 'radioChanged'
+    }
+
+    const reducer = (state, action) => {
+        switch (action.type) {
+            case ACTIONS.UPDATE_TAB_VALUE:
+                return action.payload;
+            case ACTIONS.RADIO_SELECTED:
+                return ({ ...state, radioSelected: action.payload.radioSelected });
+            default:
+                return state;
+        }
+    };
+
+    const [currentTabValueState, currentTabValueDispatch] = useReducer(reducer, { currentTabValue: 'generic', radioValues: [], radioSelected: '' });
     const [allStepsJson, setAllStepsJson] = useState({});
-    const [radioValues, setRadioValues] = useState([]);
     const [steps, setSteps] = useState([]);
-    const [radioSelected, setRadioSelected] = useState('');
-    const [openNewAreaDialog, setOpenNewAreaDialog] = useState(false);
     const [openOthersDialog, setOpenOthersDialog] = useState(false);
+    const [openNewAreaDialog, setOpenNewAreaDialog] = useState(false);
     const [newAreaTextValue, setNewAreaTextValue] = useState('');
     const [showSnackBar, setShowSnackBar] = useState(false);
     const [runEffect, setRunEffect] = useState(false);
     const [saveClicked, setSaveClicked] = useState(false);
 
     useEffect(() => {
-        setRadioValues([]);
-        setRadioSelected('');
         const fetchData = async () => {
             await fileService.readFile('all-steps.json').then(async (response) => {
                 const data = await response.json();
                 setAllStepsJson(data);
-                setCurrentTabValue('generic');
-                setRadioSelected('');
                 let currentValue: string[] = data.generic;
-                setRadioValues(
-                    currentValue.map((e) => {
-                        return e.replace('generic-', '');
-                    })
-                );
+                currentTabValueDispatch({ type: ACTIONS.UPDATE_TAB_VALUE, payload: { currentTabValue: 'generic', radioValues: currentValue.map((e) => e.replace('generic-', '')) }, radioSelected: '' })
             });
         };
         fetchData();
-    }, [runEffect]);
+    }, [runEffect, ACTIONS.UPDATE_TAB_VALUE]);
 
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
@@ -48,16 +55,14 @@ const HomePage = () => {
     };
 
     const handleTabValueChange = (event: React.SyntheticEvent, newValue: string) => {
-        setCurrentTabValue(newValue);
-        let nodes = allStepsJson[newValue].map((e) => e.replace(newValue + '-', ''));
-        setRadioValues(nodes);
-        setRadioSelected('');
+        let nodes = allStepsJson[newValue].map((e: string) => e.replace(newValue + '-', ''));
+        currentTabValueDispatch({ type: ACTIONS.UPDATE_TAB_VALUE, payload: { currentTabValue: newValue, radioValues: nodes }, radioSelected: '' });
     };
 
     const changedRadioSelection = (radioValue: string) => {
-        setRadioSelected(radioValue);
+        currentTabValueDispatch({ type: ACTIONS.RADIO_SELECTED, payload: { radioSelected: radioValue } })
         fileService
-            .readFile(currentTabValue + '-' + radioValue)
+            .readFile(currentTabValueState.currentTabValue + '-' + radioValue)
             .then((response) => {
                 return response.json();
             })
@@ -149,13 +154,13 @@ const HomePage = () => {
                 </Button>
             </div>
             <div style={{ width: '70%' }}>
-                <Tabs variant="fullWidth" value={currentTabValue} onChange={handleTabValueChange}>
+                <Tabs variant="fullWidth" value={currentTabValueState.currentTabValue} onChange={handleTabValueChange}>
                     {Object.keys(allStepsJson).map((e: string) => (
                         <Tab color="#9CCBF7" value={e} label={e} />
                     ))}
                     ;
                 </Tabs>
-                <StepAreaRadioButton radioValues={radioValues} tabValue={currentTabValue} valueSelected={changedRadioSelection} />
+                <StepAreaRadioButton tabValue={currentTabValueState.currentTabValue} radioValues={currentTabValueState.radioValues} valueSelected={changedRadioSelection} />
                 <Dialog open={openNewAreaDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
                     <DialogTitle>Add New Area</DialogTitle>
                     <DialogContent>
@@ -186,10 +191,10 @@ const HomePage = () => {
                     </DialogContent>
                 </Dialog>
             </div>
-            <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValue} stepList={steps} radioSelected={radioSelected}></MethodListTable>
+            <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValueState.currentTabValue} stepList={steps} radioSelected={currentTabValueState.radioSelected ?? ''}></MethodListTable>
             {showSnackBar && <CustomSnackBar snackBarMessage="Steps added." type={'success'} duration={6000} closeSnackBar={closeSnackBar} />}
         </div>
     );
 };
 
-export default HomePage;
+export default LandingPage;

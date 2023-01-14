@@ -10,7 +10,7 @@ import { Step } from '../model/step.model';
 const EditableTable = (props: any) => {
     const gridRef = useRef();
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
-    const gridStyle = useMemo(() => ({ height: 1000, width: 1000 }), []);
+    const gridStyle = useMemo(() => ({ height: 1000, width: 'fullWidth' }), []);
     const [rowData, setRowData] = useState<Step[]>([]);
     let updateSuggestions = props.updateSuggestions;
 

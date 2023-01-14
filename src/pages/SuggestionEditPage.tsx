@@ -4,14 +4,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import EditableTable from './EditableTable';
+import EditableTable from '../components/EditableTable';
 import { Step } from '../model/step.model';
 import { useEffect, useState } from 'react';
-import { CircularProgress, TextField, Tooltip } from '@mui/material';
-import { Delete, Edit, SaveOutlined } from '@mui/icons-material';
+import { CircularProgress, IconButton, TextField, Tooltip } from '@mui/material';
+import { Close, Delete, Edit, SaveOutlined } from '@mui/icons-material';
 import { fileService } from '../services/persist-file-changes';
 
-function SuggestionEditDialog(props: any) {
+function SuggestionEditPage(props: any) {
     const [suggestions, setSuggestions] = useState<Step[]>([]);
     const [newAreaTextBoxValue, setNewAreaTextValue] = useState('');
     const [saveClicked, setSaveClicked] = useState(false);
@@ -100,10 +100,15 @@ function SuggestionEditDialog(props: any) {
     };
 
     return (
-        <Dialog open={true} onClose={handleClose} maxWidth="xl">
-            <DialogTitle>
-                <strong style={{ color: 'darkmagenta' }}>{props.area}</strong> steps for <strong style={{ color: 'darkmagenta' }}>{props.radio.replace('-steps.json', '')}</strong> (Double click to
-                edit. Drag to re-order.)
+        <Dialog fullScreen maxWidth="lg" open={true} onClose={handleClose}>
+            <DialogTitle style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>
+                    <strong style={{ color: 'darkmagenta' }}>{props.area}</strong> steps for <strong style={{ color: 'darkmagenta' }}>{props.radio.replace('-steps.json', '')}</strong> (Double click to
+                    edit. Drag to re-order.)
+                </span>
+                <IconButton onClick={handleClose}>
+                    <Close />
+                </IconButton>
             </DialogTitle>
             <DialogContent>
                 <DialogContentText>
@@ -147,4 +152,4 @@ function SuggestionEditDialog(props: any) {
     );
 }
 
-export default SuggestionEditDialog;
+export default SuggestionEditPage;
