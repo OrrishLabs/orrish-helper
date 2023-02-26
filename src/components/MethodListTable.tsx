@@ -1,6 +1,6 @@
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Step } from '../model/step.model';
 import { Button, IconButton, Stack, TableCell, Tooltip } from '@mui/material';
 import { ContentCopy, CopyAll, Delete, Edit, Help, PlaylistAdd } from '@mui/icons-material';
@@ -12,19 +12,16 @@ import SplitButton from './SplitButton';
 import PropTypes from 'prop-types';
 import CustomSnackBar from './CustomSnackBar';
 import { fileService } from '../services/persist-file-changes';
+import { useAvailableSteps } from '../contexts/AvailableStepContext';
 
 function MethodListTable(props: any) {
-    const [suggestions, setSuggestions] = useState<Step[]>(props.stepList);
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
     const [snackBarDetails, setSnackBarDetails] = useState({ type: 'info', duration: 6000, text: '' });
     const [inTextProp, setInTextProp] = useState(false);
     const [isDialogShown, setIsDialogShown] = useState(false);
     //Below is to reset the auto complete text value by re-rendering component.
     const [randomValue, setRandomValue] = useState(Math.random());
-
-    useEffect(() => {
-        setSuggestions(props.stepList);
-    }, [props.stepList]);
+    const suggestions = useAvailableSteps();
 
     let selectedStepsToCopy: Step[] = [];
 
@@ -310,9 +307,9 @@ function MethodListTable(props: any) {
             </DragDropContext>
             <Autocomplete
                 key={randomValue}
-                onChange={(event, newStep: string) => {
+                onChange={(event, newStep) => {
                     if (newStep && newStep.length > 0) {
-                        appendSelectedSteps(newStep);
+                        appendSelectedSteps(newStep[0]);
                         setRandomValue(Math.random());
                     }
                 }}
@@ -349,7 +346,6 @@ function MethodListTable(props: any) {
                             radio={props.radioSelected}
                             setSnackBarErrorMessage={setSnackBarErrorMessage}
                             closeDialog={closeEditStepDialog}
-                            suggestions={suggestions}
                         />
                     )}
                     {suggestions.length > 0 && props.radioSelected.includes('api') ? (
@@ -398,7 +394,6 @@ function MethodListTable(props: any) {
 MethodListTable.propTypes = {
     tabValue: PropTypes.string.isRequired,
     radioSelected: PropTypes.string.isRequired,
-    stepList: PropTypes.array.isRequired,
     runEffectState: PropTypes.bool.isRequired,
     setRunEffectState: PropTypes.func.isRequired
 };

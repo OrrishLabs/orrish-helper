@@ -4,8 +4,9 @@ async function readFile(fileName: string): Promise<Response> {
         let value = sessionStorage.getItem(fileName);
         //This will happen only the first time.
         if (!value && fileName.includes('all-steps')) {
-            sessionStorage.setItem(fileName, '{"generic": ["generic-browser-steps.json"]}');
-            sessionStorage.setItem('generic-browser-steps.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');
+            sessionStorage.setItem(fileName, '{"generic": ["generic-browser-steps.json","generic-api-steps.json"]}');
+            sessionStorage.setItem('generic-browser-steps.json', '[{"id": 1,"step": "|Set browser name |Some name|","help": "Sample help."}]');
+            sessionStorage.setItem('generic-api-steps.json', '[{"id": 1,"step": "|Set api name |Some name|","help": "Sample help."}]');
             sessionStorage.setItem('sample-browser.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');
             sessionStorage.setItem('sample-mobile.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');
             sessionStorage.setItem('sample-setup-api.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');

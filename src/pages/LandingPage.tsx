@@ -2,10 +2,12 @@ import { Close } from '@mui/icons-material';
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, Tab, Tabs, TextField } from '@mui/material';
 import { _ } from 'ag-grid-community';
 import { useState, useEffect, useReducer } from 'react';
+import { useAvailableStepUpdate } from '../contexts/AvailableStepContext'
 import CustomSnackBar from '../components/CustomSnackBar';
 import GuidedTour from '../components/GuidedTour';
 import MethodListTable from '../components/MethodListTable';
 import StepAreaRadioButton from '../components/StepAreaRadioButton';
+import { AvailableStepProvider } from '../contexts/AvailableStepContext';
 import { fileService } from '../services/persist-file-changes';
 import OthersPage from './OthersPage';
 
@@ -16,38 +18,40 @@ const LandingPage = () => {
         RADIO_SELECTED: 'radioChanged'
     }
 
-    const reducer = (state, action) => {
-        switch (action.type) {
-            case ACTIONS.UPDATE_TAB_VALUE:
-                return action.payload;
-            case ACTIONS.RADIO_SELECTED:
-                return ({ ...state, radioSelected: action.payload.radioSelected });
-            default:
-                return state;
-        }
-    };
-
-    const [currentTabValueState, currentTabValueDispatch] = useReducer(reducer, { currentTabValue: 'generic', radioValues: [], radioSelected: '' });
-    const [allStepsJson, setAllStepsJson] = useState({});
-    const [steps, setSteps] = useState([]);
-    const [openOthersDialog, setOpenOthersDialog] = useState(false);
-    const [openNewAreaDialog, setOpenNewAreaDialog] = useState(false);
-    const [newAreaTextValue, setNewAreaTextValue] = useState('');
-    const [showSnackBar, setShowSnackBar] = useState(false);
     const [runEffect, setRunEffect] = useState(false);
-    const [saveClicked, setSaveClicked] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             await fileService.readFile('all-steps.json').then(async (response) => {
                 const data = await response.json();
+                console.log('First chunk : ' + JSON.stringify(data));
                 setAllStepsJson(data);
                 let currentValue: string[] = data.generic;
                 currentTabValueDispatch({ type: ACTIONS.UPDATE_TAB_VALUE, payload: { currentTabValue: 'generic', radioValues: currentValue.map((e) => e.replace('generic-', '')) }, radioSelected: '' })
             });
         };
         fetchData();
-    }, [runEffect, ACTIONS.UPDATE_TAB_VALUE]);
+    }, []);
+
+    const reducer = (state, action) => {
+        switch (action.type) {
+            case ACTIONS.UPDATE_TAB_VALUE:
+                return action.payload;
+            case ACTIONS.RADIO_SELECTED:
+                return { ...state, radioSelected: action.payload.radioSelected };
+            default:
+                return state;
+        }
+    };
+
+    const [allStepsJson, setAllStepsJson] = useState({});
+    const [openOthersDialog, setOpenOthersDialog] = useState(false);
+    const [openNewAreaDialog, setOpenNewAreaDialog] = useState(false);
+    const [newAreaTextValue, setNewAreaTextValue] = useState('');
+    const [showSnackBar, setShowSnackBar] = useState(false);
+    const [newAreaSaveClicked, setNewAreaSaveClicked] = useState(false);
+    const [currentTabValueState, currentTabValueDispatch] = useReducer(reducer, { currentTabValue: 'generic', radioValues: [], radioSelected: '' });
+    const updateAvailableSteps = useAvailableStepUpdate();
 
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
@@ -60,17 +64,19 @@ const LandingPage = () => {
     };
 
     const changedRadioSelection = (radioValue: string) => {
-        currentTabValueDispatch({ type: ACTIONS.RADIO_SELECTED, payload: { radioSelected: radioValue } })
+        currentTabValueDispatch({ type: ACTIONS.RADIO_SELECTED, payload: { radioSelected: radioValue } });
         fileService
             .readFile(currentTabValueState.currentTabValue + '-' + radioValue)
             .then((response) => {
                 return response.json();
             })
             .then((data) => {
-                setSteps(data);
+                console.log('data provided:' + JSON.stringify(data));
+                updateAvailableSteps(data);
             })
             .catch((e) => {
-                setSteps([]);
+                console.log('error:' + e);
+                updateAvailableSteps([]);
             });
     };
 
@@ -87,9 +93,9 @@ const LandingPage = () => {
     };
 
     const handleSaveNewAreaDialog = async () => {
-        setSaveClicked(true);
+        setNewAreaSaveClicked(true);
         await addNewArea();
-        setSaveClicked(false);
+        setNewAreaSaveClicked(false);
         handleCloseNewAreaDialog();
         setShowSnackBar(true);
     };
@@ -143,57 +149,59 @@ const LandingPage = () => {
     };
 
     return (
-        <div className="margin center-align">
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '20px' }}>
-                <GuidedTour />
-                <Button id="add-new-area" onClick={handleOpenNewAreaDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
-                    Add New Area
-                </Button>
-                <Button onClick={handleOpenOthersDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
-                    Other Tasks
-                </Button>
-            </div>
-            <div style={{ width: '70%' }}>
-                <Tabs variant="fullWidth" value={currentTabValueState.currentTabValue} onChange={handleTabValueChange}>
-                    {Object.keys(allStepsJson).map((e: string) => (
-                        <Tab color="#9CCBF7" value={e} label={e} />
-                    ))}
-                    ;
-                </Tabs>
-                <StepAreaRadioButton tabValue={currentTabValueState.currentTabValue} radioValues={currentTabValueState.radioValues} valueSelected={changedRadioSelection} />
-                <Dialog open={openNewAreaDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
-                    <DialogTitle>Add New Area</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>Team name will appear as new/current tab. Area name will appear as radio button.</DialogContentText>
-                        <br />
-                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '10px' }}>
-                            <TextField autoFocus onKeyPress={(e) => validateNewName(e)} onChange={handleTeamTextBoxChange} fullWidth id="standard-basic" label="Team name" variant="standard" />
-                            <TextField onKeyPress={(e) => validateNewName(e)} onChange={handleAreaTextBoxChange} fullWidth id="standard-basic" label="Area name" variant="standard" />
-                        </div>
-                    </DialogContent>
-                    <DialogActions>
-                        {saveClicked && <CircularProgress variant="indeterminate" color="info" />}
-                        <Button onClick={handleSaveNewAreaDialog} disabled={!(newAreaTextValue.split('-')[0].length > 0) || !(newAreaTextValue.split('-')[1].length > 0)}>
-                            Save
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-                <Dialog fullScreen maxWidth="lg" open={openOthersDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
-                    <DialogTitle style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <AvailableStepProvider>
+            <div className="margin center-align">
+                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '20px' }}>
+                    <GuidedTour />
+                    <Button id="add-new-area" onClick={handleOpenNewAreaDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
+                        Add New Area
+                    </Button>
+                    <Button onClick={handleOpenOthersDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
                         Other Tasks
-                        <IconButton onClick={handleCloseOpenOthersDialog}>
-                            <Close />
-                        </IconButton>
-                    </DialogTitle>
-                    <DialogContent>
-                        You can encrypt/decrypt text here to put in FitNesse tests. This is useful for avoiding plain text password etc. in the test case.
-                        <OthersPage />
-                    </DialogContent>
-                </Dialog>
+                    </Button>
+                </div>
+                <div style={{ width: '70%' }}>
+                    <Tabs variant="fullWidth" value={currentTabValueState.currentTabValue} onChange={handleTabValueChange}>
+                        {Object.keys(allStepsJson).map((e: string) => (
+                            <Tab color="#9CCBF7" key={e} value={e} label={e} />
+                        ))}
+                        ;
+                    </Tabs>
+                    <StepAreaRadioButton currentTabValueState={currentTabValueState} changedRadioSelection={changedRadioSelection} />
+                    <Dialog open={openNewAreaDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
+                        <DialogTitle>Add New Area</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>Team name will appear as new/current tab. Area name will appear as radio button.</DialogContentText>
+                            <br />
+                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '10px' }}>
+                                <TextField autoFocus onKeyPress={(e) => validateNewName(e)} onChange={handleTeamTextBoxChange} fullWidth id="standard-basic" label="Team name" variant="standard" />
+                                <TextField onKeyPress={(e) => validateNewName(e)} onChange={handleAreaTextBoxChange} fullWidth id="standard-basic" label="Area name" variant="standard" />
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            {newAreaSaveClicked && <CircularProgress variant="indeterminate" color="info" />}
+                            <Button onClick={handleSaveNewAreaDialog} disabled={!(newAreaTextValue.split('-')[0].length > 0) || !(newAreaTextValue.split('-')[1].length > 0)}>
+                                Save
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                    <Dialog fullScreen maxWidth="lg" open={openOthersDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
+                        <DialogTitle style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            Other Tasks
+                            <IconButton onClick={handleCloseOpenOthersDialog}>
+                                <Close />
+                            </IconButton>
+                        </DialogTitle>
+                        <DialogContent>
+                            You can encrypt/decrypt text here to put in FitNesse tests. This is useful for avoiding plain text password etc. in the test case.
+                            <OthersPage />
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValueState.currentTabValue} radioSelected={currentTabValueState.radioSelected ?? ''}></MethodListTable>
+                {showSnackBar && <CustomSnackBar snackBarMessage="Steps added." type={'success'} duration={6000} closeSnackBar={closeSnackBar} />}
             </div>
-            <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValueState.currentTabValue} stepList={steps} radioSelected={currentTabValueState.radioSelected ?? ''}></MethodListTable>
-            {showSnackBar && <CustomSnackBar snackBarMessage="Steps added." type={'success'} duration={6000} closeSnackBar={closeSnackBar} />}
-        </div>
+        </AvailableStepProvider>
     );
 };
 

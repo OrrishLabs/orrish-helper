@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
@@ -6,17 +6,14 @@ import { CellEvent, CellValueChangedEvent, RowDragCallbackParams, RowDragEndEven
 import { Add, Delete } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import { Step } from '../model/step.model';
+import { useAvailableSteps } from '../contexts/AvailableStepContext';
 
 const EditableTable = (props: any) => {
     const gridRef = useRef();
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: 1000, width: 'fullWidth' }), []);
-    const [rowData, setRowData] = useState<Step[]>([]);
+    let availableSteps = useAvailableSteps();
     let updateSuggestions = props.updateSuggestions;
-
-    useEffect(() => {
-        setRowData(props.suggestions);
-    }, [props.suggestions]);
 
     const onRowDragCallback = (params: RowDragCallbackParams): boolean => {
         return params.colDef.field.includes('step');
@@ -122,7 +119,7 @@ const EditableTable = (props: any) => {
                 <div style={gridStyle} className="ag-theme-alpine">
                     <AgGridReact
                         ref={gridRef}
-                        rowData={rowData}
+                        rowData={availableSteps}
                         columnDefs={columnDefs}
                         defaultColDef={defaultColDef}
                         animateRows={true}

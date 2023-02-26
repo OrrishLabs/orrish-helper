@@ -7,7 +7,7 @@ This is helpful for QA to see the available methods to be used in FitNesse while
 
 1. Run `npm install`
 2. Run `npm start`
-3. In prod, the steps are read from and written to local file system. In development environment sessionStorage is used instead of file system.
+3. In prod, the steps are read from and written to local file system. In development environment, sessionStorage is used instead of file system.
 
 ## Using in FitNesse based project
 

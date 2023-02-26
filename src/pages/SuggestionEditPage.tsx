@@ -6,21 +6,16 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import EditableTable from '../components/EditableTable';
 import { Step } from '../model/step.model';
-import { useEffect, useState } from 'react';
+import {  useState } from 'react';
 import { CircularProgress, IconButton, TextField, Tooltip } from '@mui/material';
 import { Close, Delete, Edit, SaveOutlined } from '@mui/icons-material';
 import { fileService } from '../services/persist-file-changes';
 
 function SuggestionEditPage(props: any) {
-    const [suggestions, setSuggestions] = useState<Step[]>([]);
     const [newAreaTextBoxValue, setNewAreaTextValue] = useState('');
     const [saveClicked, setSaveClicked] = useState(false);
 
     let suggestionsToCopy: Step[] = [];
-
-    useEffect(() => {
-        setSuggestions(props.suggestions);
-    }, [props]);
 
     const updateSuggestions = (data: Step[]) => {
         suggestionsToCopy = data;
@@ -112,7 +107,7 @@ function SuggestionEditPage(props: any) {
             </DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    <EditableTable setSnackBarErrorMessage={props.setSnackBarErrorMessage} suggestions={suggestions} updateSuggestions={updateSuggestions}></EditableTable>
+                    <EditableTable setSnackBarErrorMessage={props.setSnackBarErrorMessage} updateSuggestions={updateSuggestions}></EditableTable>
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
