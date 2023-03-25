@@ -57,7 +57,7 @@ export default function SplitButton(props: any) {
                     <ArrowDropDownIcon />
                 </Button>
             </ButtonGroup>
-            <Popper open={open} onResize={() => { }} onResizeCapture={() => { }} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
+            <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
                 {({ TransitionProps, placement }) => (
                     <Grow
                         {...TransitionProps}

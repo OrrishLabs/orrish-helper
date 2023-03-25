@@ -309,7 +309,7 @@ function MethodListTable(props: any) {
                 key={randomValue}
                 onChange={(event, newStep) => {
                     if (newStep && newStep.length > 0) {
-                        appendSelectedSteps(newStep[0]);
+                        appendSelectedSteps(newStep);
                         setRandomValue(Math.random());
                     }
                 }}

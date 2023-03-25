@@ -1,5 +1,6 @@
 import { createTheme, ThemeProvider } from '@mui/material';
 import './App.css';
+import { AvailableStepProvider } from './contexts/AvailableStepContext';
 import LandingPage from './pages/LandingPage';
 
 function App() {
@@ -15,9 +16,11 @@ function App() {
     });
 
     return (
-        <ThemeProvider theme={theme}>
-            <LandingPage />
-        </ThemeProvider>
+        <AvailableStepProvider>
+            <ThemeProvider theme={theme}>
+                <LandingPage />
+            </ThemeProvider>
+        </AvailableStepProvider>
     );
 }
 

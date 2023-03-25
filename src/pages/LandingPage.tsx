@@ -7,9 +7,9 @@ import CustomSnackBar from '../components/CustomSnackBar';
 import GuidedTour from '../components/GuidedTour';
 import MethodListTable from '../components/MethodListTable';
 import StepAreaRadioButton from '../components/StepAreaRadioButton';
-import { AvailableStepProvider } from '../contexts/AvailableStepContext';
 import { fileService } from '../services/persist-file-changes';
 import OthersPage from './OthersPage';
+import { Step } from '../model/step.model';
 
 const LandingPage = () => {
 
@@ -24,14 +24,13 @@ const LandingPage = () => {
         const fetchData = async () => {
             await fileService.readFile('all-steps.json').then(async (response) => {
                 const data = await response.json();
-                console.log('First chunk : ' + JSON.stringify(data));
                 setAllStepsJson(data);
                 let currentValue: string[] = data.generic;
                 currentTabValueDispatch({ type: ACTIONS.UPDATE_TAB_VALUE, payload: { currentTabValue: 'generic', radioValues: currentValue.map((e) => e.replace('generic-', '')) }, radioSelected: '' })
             });
         };
         fetchData();
-    }, []);
+    }, [ACTIONS.UPDATE_TAB_VALUE, runEffect]);
 
     const reducer = (state, action) => {
         switch (action.type) {
@@ -70,8 +69,7 @@ const LandingPage = () => {
             .then((response) => {
                 return response.json();
             })
-            .then((data) => {
-                console.log('data provided:' + JSON.stringify(data));
+            .then((data: Step[]) => {
                 updateAvailableSteps(data);
             })
             .catch((e) => {
@@ -103,6 +101,7 @@ const LandingPage = () => {
     const handleCloseNewAreaDialog = () => {
         setOpenNewAreaDialog(false);
         setNewAreaTextValue('');
+        setRunEffect(!runEffect);
     };
 
     const validateNewName = (e) => {
@@ -149,59 +148,57 @@ const LandingPage = () => {
     };
 
     return (
-        <AvailableStepProvider>
-            <div className="margin center-align">
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '20px' }}>
-                    <GuidedTour />
-                    <Button id="add-new-area" onClick={handleOpenNewAreaDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
-                        Add New Area
-                    </Button>
-                    <Button onClick={handleOpenOthersDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
-                        Other Tasks
-                    </Button>
-                </div>
-                <div style={{ width: '70%' }}>
-                    <Tabs variant="fullWidth" value={currentTabValueState.currentTabValue} onChange={handleTabValueChange}>
-                        {Object.keys(allStepsJson).map((e: string) => (
-                            <Tab color="#9CCBF7" key={e} value={e} label={e} />
-                        ))}
-                        ;
-                    </Tabs>
-                    <StepAreaRadioButton currentTabValueState={currentTabValueState} changedRadioSelection={changedRadioSelection} />
-                    <Dialog open={openNewAreaDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
-                        <DialogTitle>Add New Area</DialogTitle>
-                        <DialogContent>
-                            <DialogContentText>Team name will appear as new/current tab. Area name will appear as radio button.</DialogContentText>
-                            <br />
-                            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '10px' }}>
-                                <TextField autoFocus onKeyPress={(e) => validateNewName(e)} onChange={handleTeamTextBoxChange} fullWidth id="standard-basic" label="Team name" variant="standard" />
-                                <TextField onKeyPress={(e) => validateNewName(e)} onChange={handleAreaTextBoxChange} fullWidth id="standard-basic" label="Area name" variant="standard" />
-                            </div>
-                        </DialogContent>
-                        <DialogActions>
-                            {newAreaSaveClicked && <CircularProgress variant="indeterminate" color="info" />}
-                            <Button onClick={handleSaveNewAreaDialog} disabled={!(newAreaTextValue.split('-')[0].length > 0) || !(newAreaTextValue.split('-')[1].length > 0)}>
-                                Save
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
-                    <Dialog fullScreen maxWidth="lg" open={openOthersDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
-                        <DialogTitle style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            Other Tasks
-                            <IconButton onClick={handleCloseOpenOthersDialog}>
-                                <Close />
-                            </IconButton>
-                        </DialogTitle>
-                        <DialogContent>
-                            You can encrypt/decrypt text here to put in FitNesse tests. This is useful for avoiding plain text password etc. in the test case.
-                            <OthersPage />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValueState.currentTabValue} radioSelected={currentTabValueState.radioSelected ?? ''}></MethodListTable>
-                {showSnackBar && <CustomSnackBar snackBarMessage="Steps added." type={'success'} duration={6000} closeSnackBar={closeSnackBar} />}
+        <div className="margin center-align">
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '20px' }}>
+                <GuidedTour />
+                <Button id="add-new-area" onClick={handleOpenNewAreaDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
+                    Add New Area
+                </Button>
+                <Button onClick={handleOpenOthersDialog} color="primary" variant="contained" style={{ textTransform: 'none' }}>
+                    Other Tasks
+                </Button>
             </div>
-        </AvailableStepProvider>
+            <div style={{ width: '70%' }}>
+                <Tabs variant="fullWidth" value={currentTabValueState.currentTabValue} onChange={handleTabValueChange}>
+                    {Object.keys(allStepsJson).map((e: string) => (
+                        <Tab color="#9CCBF7" key={e} value={e} label={e} />
+                    ))}
+                    ;
+                </Tabs>
+                <StepAreaRadioButton currentTabValueState={currentTabValueState} changedRadioSelection={changedRadioSelection} />
+                <Dialog open={openNewAreaDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
+                    <DialogTitle>Add New Area</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>Team name will appear as new/current tab. Area name will appear as radio button.</DialogContentText>
+                        <br />
+                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '10px' }}>
+                            <TextField autoFocus onKeyPress={(e) => validateNewName(e)} onChange={handleTeamTextBoxChange} fullWidth id="standard-basic" label="Team name" variant="standard" />
+                            <TextField onKeyPress={(e) => validateNewName(e)} onChange={handleAreaTextBoxChange} fullWidth id="standard-basic" label="Area name" variant="standard" />
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        {newAreaSaveClicked && <CircularProgress variant="indeterminate" color="info" />}
+                        <Button onClick={handleSaveNewAreaDialog} disabled={!(newAreaTextValue.split('-')[0].length > 0) || !(newAreaTextValue.split('-')[1].length > 0)}>
+                            Save
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog fullScreen maxWidth="lg" open={openOthersDialog} onClose={handleCloseNewAreaDialog} style={{ textAlign: 'center' }}>
+                    <DialogTitle style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        Other Tasks
+                        <IconButton onClick={handleCloseOpenOthersDialog}>
+                            <Close />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent>
+                        You can encrypt/decrypt text here to put in FitNesse tests. This is useful for avoiding plain text password etc. in the test case.
+                        <OthersPage />
+                    </DialogContent>
+                </Dialog>
+            </div>
+            <MethodListTable runEffectState={runEffect} setRunEffectState={setRunEffect} tabValue={currentTabValueState.currentTabValue} radioSelected={currentTabValueState.radioSelected ?? ''}></MethodListTable>
+            {showSnackBar && <CustomSnackBar snackBarMessage="Steps added." type={'success'} duration={6000} closeSnackBar={closeSnackBar} />}
+        </div>
     );
 };
 

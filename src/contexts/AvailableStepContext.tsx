@@ -1,7 +1,8 @@
 import React, { useContext, useState } from "react";
+import { Step } from "../model/step.model";
 
 const AvailableStepContext = React.createContext([]);
-const AvailableStepUpdateContext = React.createContext((steps: []) => { console.log('Creating default update context.' + JSON.stringify(steps)) });
+const AvailableStepUpdateContext = React.createContext((steps: Step[]) => { });
 
 export function useAvailableSteps() {
     return useContext(AvailableStepContext);
@@ -15,8 +16,7 @@ export function AvailableStepProvider({ children }) {
 
     const [availableSteps, setAvailableSteps] = useState([]);
 
-    function updateAvailableSteps(steps: []) {
-        console.log('setting available steps in context...');
+    function updateAvailableSteps(steps: Step[]) {
         setAvailableSteps(steps);
     }
 
