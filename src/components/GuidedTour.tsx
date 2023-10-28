@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
-import { Button } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
+import { HelpCenter } from '@mui/icons-material';
 
 const GuidedTour = () => {
     const [run, setRun] = useState(false);
-    const [steps] = useState<Step[]>([
+    const steps: Step[] = [
         {
             target: '#radio-group',
             content: 'Select one of the radio buttons to populate suggestions.',
@@ -29,7 +30,7 @@ const GuidedTour = () => {
             target: '#bottom-buttons',
             content: 'Buttons will appear on selecting a radio. Tooltip on each button shows more details.'
         }
-    ]);
+    ];
 
     const handleJoyrideCallback = (data: CallBackProps) => {
         const { status } = data;
@@ -46,7 +47,10 @@ const GuidedTour = () => {
     };
 
     return (
-        <Button color="primary" variant="contained" style={{ textTransform: 'none' }} onClick={handleClickStart}>
+        <IconButton aria-label="help" color="primary" onClick={handleClickStart}>
+            <Tooltip title="Show how to create test.">
+                <HelpCenter color='action' fontSize='large' />
+            </Tooltip>
             <Joyride
                 callback={handleJoyrideCallback}
                 continuous={true}
@@ -64,8 +68,7 @@ const GuidedTour = () => {
                     buttonBack: { color: 'primary' }
                 }}
             />
-            Show How To Create Test
-        </Button>
+        </IconButton>
     );
 };
 

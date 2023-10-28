@@ -63,6 +63,9 @@ const OthersPage = () => {
 
     return (
         <div id="otherDialog" style={{ margin: '20px 200px' }}>
+            <p>
+                You can encrypt/decrypt text here to put in FitNesse tests. This is useful for avoiding plain text password etc. in the test case.
+            </p>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '20px' }}>
                 <TextField onChange={handleTextBoxChange} fullWidth id="standard-basic" label="Enter value to encrypt/decrypt" variant="standard" />
                 <Button disabled={textBoxValue.trim().length === 0} onClick={() => encrypt()} color="primary" variant="contained" style={{ textTransform: 'none' }}>

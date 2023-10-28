@@ -23,8 +23,6 @@ function MethodListTable(props: any) {
     const [randomValue, setRandomValue] = useState(Math.random());
     const suggestions = useAvailableSteps();
 
-    let selectedStepsToCopy: Step[] = [];
-
     const closeSnackBar = () => {
         //This is needed for re-rendering on clicking same button again.
         setSnackBarDetails({ type: 'info', duration: 6000, text: '' });
@@ -93,9 +91,8 @@ function MethodListTable(props: any) {
         let valueSteps = suggestions.filter((e) => e.step.includes(newValue.trim()));
         if (valueSteps && valueSteps.length > 0) {
             setSelectedSteps((prevState) => [...prevState, { ...valueSteps[0], id: Math.random() }]);
-            selectedStepsToCopy.push(valueSteps[0]);
         }
-        setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
+        setInTextProp(selectedSteps.length === 0 ? false : true);
     };
 
     const addSampleSteps = async () => {
@@ -116,24 +113,23 @@ function MethodListTable(props: any) {
         if (!destination) return;
         if (destination.droppableId === source.draggableId && destination.index === source.index) return;
 
-        let sourceText = selectedStepsToCopy[source.index];
+        let sourceText = selectedSteps[source.index];
         let updatedDestIndex = destination.index > source.index ? destination.index - 1 : destination.index;
 
-        selectedStepsToCopy.splice(source.index, 1);
-        selectedStepsToCopy.splice(updatedDestIndex, 0, sourceText);
+        selectedSteps.splice(source.index, 1);
+        selectedSteps.splice(updatedDestIndex, 0, sourceText);
 
-        setSelectedSteps(selectedStepsToCopy);
+        setSelectedSteps(selectedSteps);
+        props.setRunEffectState(!props.runEffectState);
     };
 
     let onDeleteStep = (step: Step) => {
         setSelectedSteps(selectedSteps.filter((e) => !(e.id === step.id)));
-        const index = selectedStepsToCopy.findIndex((e) => step.id === e.id);
-        selectedStepsToCopy.splice(index, 1);
-        setInTextProp(selectedStepsToCopy.length === 0 ? false : true);
+        setInTextProp(selectedSteps.length === 0 ? false : true);
     };
 
     let onCopyStep = (step: Step) => {
-        let textToCopy = selectedStepsToCopy.find((e) => step.id === e.id).step;
+        let textToCopy = selectedSteps.find((e) => step.id === e.id).step;
         var textArea = document.createElement('textarea');
         textArea.value = textToCopy;
         document.body.appendChild(textArea);
@@ -145,9 +141,7 @@ function MethodListTable(props: any) {
     };
 
     let onHelpStep = (step: Step) => {
-        const index = selectedStepsToCopy.findIndex((e) => step.id === e.id);
-        let text: string = selectedStepsToCopy[index].help;
-        setSnackBarDetails({ type: 'info', duration: 6000, text: text });
+        setSnackBarDetails({ type: 'info', duration: 6000, text: step.help });
     };
 
     const updateStepTextChange = (valuePassed: any) => {
@@ -156,8 +150,8 @@ function MethodListTable(props: any) {
         const count = htmlElementId.split('-')[1];
         const text = valuePassed.currentTarget.innerHTML;
 
-        const index = selectedStepsToCopy.findIndex((e) => identifier.includes(e.id));
-        let items = [...selectedStepsToCopy];
+        const index = selectedSteps.findIndex((e) => identifier.includes(e.id));
+        let items = [...selectedSteps];
         let item = { ...items[index] };
 
         var updatedString = item.step
@@ -167,7 +161,7 @@ function MethodListTable(props: any) {
 
         item.step = updatedString;
         items[index] = item;
-        selectedStepsToCopy = items;
+        setSelectedSteps(items);
     };
 
     const clearSteps = () => {
@@ -177,20 +171,20 @@ function MethodListTable(props: any) {
 
     const onCopyAllSteps = () => {
         var textArea = document.createElement('textarea');
-        textArea.value = '^|script|\n' + selectedStepsToCopy.map((e) => e.step).join('\n');
+        textArea.value = '^|script|\n' + selectedSteps.map((e) => e.step).join('\n');
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
         document.execCommand('copy');
         setSnackBarDetails({ type: 'success', duration: 6000, text: 'Copied steps to clipboard. You can paste it in FitNesse page and execute.' });
         document.body.removeChild(textArea);
-        setSelectedSteps(selectedStepsToCopy);
+        setSelectedSteps(selectedSteps);
     };
 
-    const getSuggestedCellsAsPlainText = (eachStep: Step) => {
+    const getSelectedCellsAsPlainText = (eachStep: Step) => {
         let currentStep = eachStep.step;
-        if (selectedStepsToCopy.findIndex((e) => e.id === eachStep.id) === -1) {
-            selectedStepsToCopy.push(eachStep);
+        if (selectedSteps.findIndex((e) => e.id === eachStep.id) === -1) {
+            selectedSteps.push(eachStep);
         }
         let rowValue;
         let isEditable = false;
@@ -279,7 +273,7 @@ function MethodListTable(props: any) {
                                                                     <Delete />
                                                                 </IconButton>
                                                             </TableCell>
-                                                            <TableCell>{getSuggestedCellsAsPlainText(e)}</TableCell>
+                                                            <TableCell>{getSelectedCellsAsPlainText(e)}</TableCell>
                                                             <TableCell>
                                                                 <Tooltip title="Copy this step to clipboard.">
                                                                     <IconButton size="small" onClick={() => onCopyStep(e)}>
