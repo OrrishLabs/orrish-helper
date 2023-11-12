@@ -3,10 +3,11 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useState } from 'react';
 import { Step } from '../model/step.model';
 import { Button, IconButton, Stack, TableCell, Tooltip } from '@mui/material';
-import { ContentCopy, CopyAll, Delete, Edit, Help, PlaylistAdd } from '@mui/icons-material';
+import { ContentCopy, CopyAll, Delete, Edit, Help, List, PlaylistAdd } from '@mui/icons-material';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
 import SuggestionEditPage from '../pages/SuggestionEditPage';
+import ExistingTestEditPage from '../pages/ExistingTestEditPage';
 import { sampleStepsService } from '../services/get-sample-steps';
 import SplitButton from './SplitButton';
 import PropTypes from 'prop-types';
@@ -18,7 +19,8 @@ function MethodListTable(props: any) {
     const [selectedSteps, setSelectedSteps] = useState<Step[]>([]);
     const [snackBarDetails, setSnackBarDetails] = useState({ type: 'info', duration: 6000, text: '' });
     const [inTextProp, setInTextProp] = useState(false);
-    const [isDialogShown, setIsDialogShown] = useState(false);
+    const [isEditSuggestionsDialogShown, setIsEditSuggestionsDialogShown] = useState(false);
+    const [isEditExistingCaseDialogShown, setIsEditExistingCaseDialogShown] = useState(false);
     //Below is to reset the auto complete text value by re-rendering component.
     const [randomValue, setRandomValue] = useState(Math.random());
     const suggestions = useAvailableSteps();
@@ -27,6 +29,24 @@ function MethodListTable(props: any) {
         //This is needed for re-rendering on clicking same button again.
         setSnackBarDetails({ type: 'info', duration: 6000, text: '' });
     };
+
+    const closeEditTestCaseDialog = async (data: string) => {
+        let stepCount = 0;
+        setIsEditExistingCaseDialogShown(false);
+        data.split("\n").forEach(e => {
+            if (e.startsWith('|') && e.endsWith('|')) {
+                ++stepCount;
+                let step: Step = { id: Math.random(), step: e, help: '' }
+                setSelectedSteps((prevState) => [...prevState, step]);
+            }
+        });
+        if (stepCount > 0) {
+            setSnackBarDetails({ type: 'info', duration: 3000, text: 'Populated ' + stepCount + ' step' + (stepCount === 1 ? '.' : 's.') });
+            setInTextProp(true);
+        } else {
+            setSnackBarDetails({ type: 'error', duration: 3000, text: 'No valid step found.' });
+        }
+    }
 
     const closeEditStepDialog = async (typeOfAction: string, suggestionsToCopy: Step[]) => {
         if (typeOfAction.includes('delete') || typeOfAction.includes('rename')) {
@@ -61,11 +81,15 @@ function MethodListTable(props: any) {
             document.body.removeChild(textArea);
             setSnackBarDetails({ type: 'success', duration: 10000, text: 'Steps are copied to clipboard.' });
         }
-        setIsDialogShown(false);
+        setIsEditSuggestionsDialogShown(false);
     };
 
-    const showDialog = () => {
-        setIsDialogShown(true);
+    const showEditExistingCaseDialog = () => {
+        setIsEditExistingCaseDialogShown(true);
+    };
+
+    const showEditSuggestionsDialog = () => {
+        setIsEditSuggestionsDialogShown(true);
     };
 
     const duration = 500;
@@ -92,7 +116,7 @@ function MethodListTable(props: any) {
         if (valueSteps && valueSteps.length > 0) {
             setSelectedSteps((prevState) => [...prevState, { ...valueSteps[0], id: Math.random() }]);
         }
-        setInTextProp(selectedSteps.length === 0 ? false : true);
+        setInTextProp(true);
     };
 
     const addSampleSteps = async () => {
@@ -199,7 +223,7 @@ function MethodListTable(props: any) {
                                 contentEditable
                                 suppressContentEditableWarning
                                 id={((eachStep.id! as unknown as string) + '-' + count) as string}
-                                onInput={(e) => updateStepTextChange(e)}
+                                onBlur={(e) => updateStepTextChange(e)}
                                 className="data"
                             >
                                 {values[1]}
@@ -210,7 +234,7 @@ function MethodListTable(props: any) {
                                 contentEditable
                                 suppressContentEditableWarning
                                 id={((eachStep.id! as unknown as string) + '-' + count) as string}
-                                onInput={(e) => updateStepTextChange(e)}
+                                onBlur={(e) => updateStepTextChange(e)}
                                 className="data"
                             >
                                 {values[1]}
@@ -224,7 +248,7 @@ function MethodListTable(props: any) {
                                 contentEditable
                                 suppressContentEditableWarning
                                 id={((eachStep.id! as unknown as string) + '-' + count) as string}
-                                onInput={(e) => updateStepTextChange(e)}
+                                onBlur={(e) => updateStepTextChange(e)}
                                 className="data"
                             >
                                 {values[count]}
@@ -322,19 +346,26 @@ function MethodListTable(props: any) {
                 )}
             />
             <br />
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: '10px' }}>
+                {selectedSteps.length === 0 && (
+                    <Tooltip title={<span className="tooltip">Populate steps to modify existing test case.</span>}>
+                        <Button color="secondary" variant="contained" startIcon={<List />} onClick={showEditExistingCaseDialog}>
+                            Populate
+                        </Button>
+                    </Tooltip>
+                )}
                 {props.radioSelected.length > 0 && (
                     <Tooltip title={<span className="tooltip">Rename/delete radio or edit available suggestions for {props.radioSelected.split('-')[0].toUpperCase()}</span>}>
-                        <Button color="secondary" variant="contained" startIcon={<Edit />} onClick={showDialog}>
+                        <Button color="secondary" variant="contained" startIcon={<Edit />} onClick={showEditSuggestionsDialog}>
                             Manage
                         </Button>
                     </Tooltip>
                 )}
-                <div id="bottom-buttons" />
-                <div />
-                <div />
                 <Stack direction="row" spacing={1}>
-                    {isDialogShown && (
+                    {isEditExistingCaseDialogShown && (
+                        <ExistingTestEditPage closeDialog={closeEditTestCaseDialog} />
+                    )}
+                    {isEditSuggestionsDialogShown && (
                         <SuggestionEditPage
                             area={props.tabValue}
                             radio={props.radioSelected}
