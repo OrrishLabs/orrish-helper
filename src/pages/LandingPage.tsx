@@ -12,13 +12,13 @@ const LandingPage = () => {
         FAQ
     }
 
-    const [pageText, setPageText] = useState(PAGE.TEST);
+    const [pageText, setPageText] = useState<PAGE>(PAGE.TEST);
 
     return (
         <>
             <div className="margin" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '20px' }}>
                 <Button href={window.location.origin} color="primary" variant="contained" style={{ textTransform: 'none' }}>
-                    Back to FitNesse</Button>
+                    Back to Home</Button>
                 {(pageText !== PAGE.TEST) && <Button onClick={() => setPageText(PAGE.TEST)} color="primary" variant="contained" style={{ textTransform: 'none' }}>
                     Test
                 </Button>}

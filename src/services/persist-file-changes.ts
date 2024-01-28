@@ -7,11 +7,11 @@ async function readFile(fileName: string): Promise<Response> {
             sessionStorage.setItem(fileName, '{"generic": ["generic-browser-steps.json","generic-api-steps.json"]}');
             sessionStorage.setItem(
                 'generic-browser-steps.json',
-                '[{"id": 1,"step": "|Set browser name |Some name|","help": "Sample help."},{"id": 2,"step": "|Another browser step |Some name|","help": "2nd Step help."}]'
+                '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."},{"id": 2,"step": "|Another browser step |Some name|","help": "2nd Step help."}]'
             );
             sessionStorage.setItem(
                 'generic-api-steps.json',
-                '[{"id": 1,"step": "|Set api name |Some name|","help": "Sample help."},{"id": 2,"step": "|Second api step |Some name|","help": "Second API step help."}]'
+                '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."},{"id": 2,"step": "|Second api step |Some name|","help": "Second API step help."}]'
             );
             sessionStorage.setItem('sample-browser.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');
             sessionStorage.setItem('sample-mobile.json', '[{"id": 1,"step": "|Set suite name |Some name|","help": "Sample help."}]');

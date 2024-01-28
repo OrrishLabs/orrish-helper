@@ -27,7 +27,7 @@ const FAQPage = () => {
                     <ul>
                         <li>Click the "Test" button on top to go to test creationpage.</li>
                         <li>Click the help icon to guide you to write a test.</li>
-                        <li>Once you are ready with the steps, copy the text and go to FitNesse page. Navigate to your desired folder and create a test page. Paste the content of the created step and click Test.</li>
+                        <li>Once you are ready with the steps, copy the text and go to home page. Navigate to your desired folder and create a test page. Paste the content of the created step and click Test.</li>
                     </ul>
                 </AccordionDetails>
             </Accordion>
