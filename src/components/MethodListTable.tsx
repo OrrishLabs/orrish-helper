@@ -3,7 +3,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useEffect, useState } from 'react';
 import { Step } from '../model/step.model';
 import { Button, IconButton, Stack, TableCell, Tooltip } from '@mui/material';
-import { Add, ClearAll, ClearRounded, ContentCopy, CopyAll, CopyAllOutlined, CopyAllRounded, CopyAllSharp, CopyAllTwoTone, Delete, Edit, GridOn, Help, List, PlaylistAdd } from '@mui/icons-material';
+import { Add, ClearRounded, ContentCopy, CopyAllTwoTone, Delete, Edit, GridOn, Help, List } from '@mui/icons-material';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
 import SuggestionEditPage from '../pages/SuggestionEditPage';
@@ -50,7 +50,7 @@ function MethodListTable(props: any) {
     const onClickAddRow = () => {
         setDataRows((prev) => {
             let map = new Map(prev);
-            let columnLength = map.values().next().value.length;
+            let columnLength = dataRowHeaders.length;
             let arr: string[] = []
             for (let i = 0; i < columnLength; i++) {
                 if (i === 0) {
@@ -126,9 +126,9 @@ function MethodListTable(props: any) {
         for (let i = 1; i <= dataRows.size; i++) {
             const eachRow = dataRows.get(i);
             var eachRowValues = '|';
-            eachRow.forEach(column => {
-                eachRowValues += column + '|';
-            });
+            for (let index = 0; index < eachRow.length; i++) {
+                eachRowValues += eachRow[i] + '|';
+            }
             fullStringToCopy += eachRowValues + '\n';
         }
         actualCopyAction(fullStringToCopy);
@@ -523,7 +523,7 @@ function MethodListTable(props: any) {
                 </div>
             }
             <br />
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: '10px' }} id='bottom-buttons'>
                 {selectedSteps.length === 0 && (
                     <Tooltip title={<span className="tooltip">Populate steps to modify existing test case.</span>}>
                         <Button color="secondary" variant="contained" startIcon={<List />} onClick={showEditExistingCaseDialog}>
@@ -573,7 +573,7 @@ function MethodListTable(props: any) {
                         ></SplitButton>
                     ) : props.radioSelected.includes('browser') || props.radioSelected.includes('mobile') ? (
                         <Tooltip title={<span className="tooltip">Add Sample {props.radioSelected.split('-')[0].toUpperCase()} Steps</span>}>
-                            <IconButton style={{ background: '##5CA9FE' }} onClick={addSampleSteps}>
+                            <IconButton style={{ background: 'lightcyan' }} onClick={addSampleSteps}>
                                 <Add />
                             </IconButton>
                         </Tooltip>
